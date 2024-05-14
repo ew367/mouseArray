@@ -18,7 +18,7 @@
 # file in the project folder
 
 
-# MAY BE GOOD TO INCLUDE SESAME PROBE MASKING HERE TOO????
+# MAY BE GOOD TO INCLUDE SESAME PROBE MASKING HERE TOO???? - in normalisation script
 
 #----------------------------------------------------------------------#
 # LOAD PACKAGES
@@ -41,6 +41,7 @@ source("config.r")
 #----------------------------------------------------------------------#
 
 sampleSheet <- read.csv(pheno, stringsAsFactors = F)
+sampleSheet$Cell_Type <- trimws(sampleSheet$Cell_Type)
 
 if(file.exists(file = file.path(normDir, "rgSet.rdat"))){
   print("Loading rgSet")
@@ -211,54 +212,7 @@ QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$B
 
 
 #----------------------------------------------------------------------#
-# PCA CLUSTERING
+# SAVE AND CLOSE
 #----------------------------------------------------------------------#
 
-# N.B. Clustering is only performed on samples that have passed the following:
-# intensity, pfilt and bscon checks
-
-sampleSheet <- sampleSheet[sampleSheet$Basename %in% QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass],]
-
-if(file.exists(file = file.path(normDir, "rawBetas.rdat"))){
-  print("Loading rawBetas object")
-  load(file = file.path(normDir, "rawBetas.rdat"))
-} else{
-  betas<-getB(mraw)
-  save(betas, file=file.path(normDir, "rawBetas.rdat"))
-  print("rawBetas object created and saved")
-}
-
-# remove failed samples from betas object prior to clustering
-
-betasPassed <- betas[,sampleSheet$Basename]
-
-sigma <- apply(betasPassed, 1, sd)
-
-
-
-# replace NAN with 0.5 in 16 cases
-#test <-betas[complete.cases(betas),]
-
-pca.res <- prcomp(t(betas))
-
-
-
-#----------------------------------------------------------------------#
-# Normalise within cell type (move to another script)
-#----------------------------------------------------------------------#
-
-
-#----------------------------------------------------------------------#
-# SAVE AND EXIT
-#----------------------------------------------------------------------#
-
-# QCMetrics
-# RgSet
-
-# mraw
-# detP
-# pc.res
-# sigma
-
-
-# bscon stuff
+save(QCmetrics, file=file.path(normDir, "QCmetrics.rdat"))
