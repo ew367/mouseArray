@@ -43,12 +43,12 @@ source("config.r")
 sampleSheet <- read.csv(pheno, stringsAsFactors = F)
 sampleSheet$Cell_Type <- trimws(sampleSheet$Cell_Type)
 
-if(file.exists(file = file.path(normDir, "rgSet.rdat"))){
+if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
   print("Loading rgSet")
-  load(file = file.path(normDir, "rgSet.rdat"))
+  load(file = file.path(QCDir, "rgSet.rdat"))
 } else{
   rgSet <- readidat(path = idatPath ,manifestfile=manifest ,recursive = TRUE)
-  save(rgSet, file=file.path(normDir, "rgSet.rdat"))
+  save(rgSet, file=file.path(QCDir, "rgSet.rdat"))
   print("rgSet created and saved")
 }
 
@@ -59,12 +59,12 @@ if(file.exists(file = file.path(normDir, "rgSet.rdat"))){
 # Calculate intensities
 #----------------------------------------------------------------------#
 
-if(file.exists(file = file.path(normDir, "mraw.rdat"))){
+if(file.exists(file = file.path(QCDir, "mraw.rdat"))){
   print("Loading mraw object")
-  load(file = file.path(normDir, "mraw.rdat"))
+  load(file = file.path(QCDir, "mraw.rdat"))
 } else{
   mraw <- getmeth(rgSet)
-  save(mraw, file=file.path(normDir, "mraw.rdat"))
+  save(mraw, file=file.path(QCDir, "mraw.rdat"))
   print("mraw object created and saved")
 }
 
@@ -99,12 +99,12 @@ QCmetrics$IntensityPass <- ifelse(QCmetrics$M.median > 2000 & QCmetrics$U.median
 # P FILTER
 #----------------------------------------------------------------------#
 
-if(file.exists(file = file.path(normDir, "detP.rdat"))){
+if(file.exists(file = file.path(QCDir, "detP.rdat"))){
   print("Loading detP object")
-  load(file = file.path(normDir, "detP.rdat"))
+  load(file = file.path(QCDir, "detP.rdat"))
 } else{
   detP <- calcdetP(rgSet)
-  save(detP, file=file.path(normDir, "detP.rdat"))
+  save(detP, file=file.path(QCDir, "detP.rdat"))
   print("detP object created and saved")
 }
 
@@ -131,9 +131,9 @@ failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 
 # BISULPHITE CONVERSION
 #----------------------------------------------------------------------#
 
-if(file.exists(file = file.path(normDir, "bsCon.rdat"))){
+if(file.exists(file = file.path(QCDir, "bsCon.rdat"))){
   print("Loading bsCon object")
-  load(file = file.path(normDir, "bsCon.rdat"))
+  load(file = file.path(QCDir, "bsCon.rdat"))
 } else{
 
 ctrls <- metadata(rgSet)$ictrl
@@ -166,7 +166,7 @@ BSconAll<-rbind(BSconAll, BScon.med)*100
 BSconAll <- BSconAll[,QCmetrics$Basename]
 BScon.med <- BScon.med[QCmetrics$Basename]*100
 
-save(BSconAll, file=file.path(normDir, "bsCon.rdat"))
+save(BSconAll, file=file.path(QCDir, "bsCon.rdat"))
 print("bsCon object created and saved")
 }
 
@@ -182,13 +182,13 @@ QCmetrics$BsConPass <- ifelse(QCmetrics$BsCon > bsConThresh, TRUE, FALSE)
 # SEX CHECK (ENMIX)
 #----------------------------------------------------------------------#
 
-if(file.exists(file = file.path(normDir, "sexPred.rdat"))){
+if(file.exists(file = file.path(QCDir, "sexPred.rdat"))){
   print("Loading sexPred object")
-  load(file = file.path(normDir, "sexPred.rdat"))
+  load(file = file.path(QCDir, "sexPred.rdat"))
 } else{
   sexPred <- predSex(rgSet)
   colnames(sexPred) <- c("Basename", "PredSex")
-  save(sexPred, file=file.path(normDir, "sexPred.rdat"))
+  save(sexPred, file=file.path(QCDir, "sexPred.rdat"))
   print("sexPred object created and saved")
 }
 
@@ -215,4 +215,4 @@ QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$B
 # SAVE AND CLOSE
 #----------------------------------------------------------------------#
 
-save(QCmetrics, file=file.path(normDir, "QCmetrics.rdat"))
+save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
