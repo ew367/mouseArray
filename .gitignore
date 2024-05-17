@@ -1,2 +1,7 @@
 # html files
 *.html
+
+#image files
+*.png
+*.pdf
+*.jpeg
