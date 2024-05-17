@@ -11,6 +11,8 @@
 ##                    The CellTypeQC.rmd script uses these metrics to output
 ##                    a html report
 ##
+##                    This script is an adaptation of the one from brainFans
+##
 ##---------------------------------------------------------------------#
 
 #----------------------------------------------------------------------#
@@ -25,6 +27,7 @@
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
 print("loading packages...")
+library(MatrixGenerics)
 
 
 source("config.r")
@@ -37,9 +40,11 @@ source("config.r")
 # N.B. Clustering is only performed on samples that have passed the following:
 # intensity, pfilt and bscon checks
 
+# these files are not currently filtered...
+load(file = file.path(normDir, "rawBetas.rdat"))
+load(file = file.path(normDir, "QCmetrics.rdat"))
 
-load(file = file.path(normDir, "rgSet.rdat"))
-
+QCmetrics$Cell_Type <- trimws(QCmetrics$Cell_Type)
 
 
 #----------------------------------------------------------------------#
@@ -48,7 +53,7 @@ load(file = file.path(normDir, "rgSet.rdat"))
 
 print("Calculating PCs from beta matrix")
 
-pca <- prcomp(t(rawbetas))
+pca <- prcomp(t(betas))
 betas.scores = pca$x
 colnames(betas.scores) = paste(colnames(betas.scores), '_betas', sep='')
 betas.pca<-pca$sdev^2/sum(pca$sdev^2)
@@ -105,7 +110,7 @@ for(i in 1:nrow(QCmetrics)){
 #----------------------------------------------------------------------#
 # CALCULATE INDIVIDUAL FACS SCORE
 #----------------------------------------------------------------------#
-keepCols<-c("Individual_ID", "Sex", "Age", "Phenotype", "Tissue.Centre")
+keepCols<-c("Individual_ID", "Sex", "Age", "Group", "Batch")
 keepCols<-keepCols[keepCols %in% colnames(QCmetrics)]
 uniqueIDs<-unique(QCmetrics[,keepCols])
 indFACSEff<-indFACSEff<-aggregate(maxSD[which(QCmetrics$Cell_Type != "Total")], by = list(QCmetrics$Individual_ID[which(QCmetrics$Cell_Type != "Total")]), FUN = median, na.rm = TRUE)
@@ -114,7 +119,7 @@ nFACs<-table(QCmetrics$Individual_ID[QCmetrics$Cell_Type != "Total"])
 uniqueIDs<-cbind(uniqueIDs, indFACSEff$x[match(uniqueIDs$Individual_ID, as.character(indFACSEff$Group.1))], as.numeric(nFACs[uniqueIDs$Individual_ID]))
 colnames(uniqueIDs)<-c(keepCols, "FACsEffiency", "nFACS")
 
-write.csv(uniqueIDs, paste0(qcOutFolder, "/IndividualFACsEffciencyScores.csv"))
+write.csv(uniqueIDs, paste0(normDir, "/IndividualFACsEffciencyScores.csv"))
 
 # exclude individuals who hd very poor FACS sorts
 QCmetrics$passFACS<-QCmetrics$Individual_ID %in% uniqueIDs$Individual_ID[which(uniqueIDs$FACsEffiency < 5)]
@@ -206,7 +211,7 @@ satb2NegIndex<-which(QCmetrics$Cell_Type == "SATB2-")
 closestLabelledCellType[satb2NegIndex[!closestCellTypePCA[satb2NegIndex] %in% neunCT]]<-TRUE
 
 QCmetrics<-cbind(QCmetrics, closestCellTypePCA, closestLabelledCellType)
-write.csv(QCmetrics[which(closestLabelledCellType == "FALSE"),], paste0(qcOutFolder, "/SamplesPredictedDiffCellTypePCAMahDist.csv"))
+write.csv(QCmetrics[which(closestLabelledCellType == "FALSE"),], paste0(normDir, "/SamplesPredictedDiffCellTypePCAMahDist.csv"))
 
 #----------------------------------------------------------------------#
 # COMPARE TO CELL TYPE POLYTOPE
@@ -258,7 +263,7 @@ for(thres in outlierThres){
 withinSDMean<-pcaClassify[["withinSDMean"]][,match(studentThres, outlierThres)]
 pcaClassifyDistinctCT<-pcaClassify[["predictCellType"]][,match(studentThres, outlierThres)]
 
-write.csv(QCmetrics[which(withinSDMean == "FALSE"),],paste0(qcOutFolder, "/SamplesPCAOutlierFromCellType.csv"))
+write.csv(QCmetrics[which(withinSDMean == "FALSE"),],paste0(normDir, "/SamplesPCAOutlierFromCellType.csv"))
 
 #----------------------------------------------------------------------#
 # CLASSIFY CORRECT CELL TYPE
@@ -279,6 +284,9 @@ passCTCheck<-withinSDMean
 passCTCheck[which(QCmetrics$Cell_Type == "Total")]<-TRUE
 QCmetrics$passCTCheck<-passCTCheck
 
+
 #----------------------------------------------------------------------#
 # SAVE AND CLOSE
 #----------------------------------------------------------------------#
+
+save(QCmetrics, file=file.path(normDir, "QCmetricsCT.rdat"))
