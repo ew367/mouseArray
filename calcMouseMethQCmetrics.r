@@ -29,7 +29,6 @@ library(ENmix)
 library(SummarizedExperiment)
 library(dplyr)
 library(plotrix)
-library(factoextra)
 library(stringr)
 
 
@@ -201,14 +200,16 @@ QCmetrics$sexPass <- ifelse(QCmetrics$PredSex == QCmetrics$Sex, TRUE, FALSE)
 # REMOVE SAMPLES/PROBES THAT FAIL THE FIRST QC STAGE
 #----------------------------------------------------------------------#
 
-sampleSheet <- sampleSheet[sampleSheet$Basename %in% QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass],]
+#note this does not currently exclude sex mismatch exclusion
 
-rgSet <- rgSet[ ,QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass]]
+#sampleSheet <- sampleSheet[sampleSheet$Basename %in% QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass],]
+
+rgSetPass <- rgSet[ ,QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass]]
 
 #remove failed probes
-rgSet <- rgSet[!rgSet@elementMetadata$Name %in% failedProbes, ]
+rgSetPass <- rgSetPass[!rgSet@elementMetadata$Name %in% failedProbes, ]
 
-QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass
+QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$sexPass
 
 
 #----------------------------------------------------------------------#
@@ -216,3 +217,4 @@ QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$B
 #----------------------------------------------------------------------#
 
 save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
+save(rgSetPass, file=file.path(QCDir, "rgSetPass.rdat"))

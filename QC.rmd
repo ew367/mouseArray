@@ -1,25 +1,28 @@
+---
+title: "DNA methylation Illumina Arrays Quality Control Report"
+author: "Emma Walker"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
 
----
-  title: "MouseArrayQC_CellSortedDataN204"
-output:
-  pdf_document: default
-html_document: default
-keep_md: yes
----
-  
-  ```{r setup, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction
 
-Methylation QC workflow based on combination of https://www.bioconductor.org/packages/release/workflows/vignettes/methylationArrayAnalysis/inst/doc/methylationArrayAnalysis.html and code by Emma Walker
+QC report for APP-KI cell sorted mouse data (n samples = 204)
 
-Updated April 2023
+Methylation QC workflow based on combination of https://www.bioconductor.org/packages/release/workflows/vignettes/methylationArrayAnalysis/inst/doc/methylationArrayAnalysis.html and code by Emma Walker and Nick Clifton
 
-# 1  Loading data
+Updated May 2024
 
-An obejct of class ENmix::rgDataSet was made using the ENmix package and is loaded in alongside the sample sheet containing the pheno data for the mice. 
+# Loading data
+
+An obejct of class ENmix::rgDataSet was made using the ENmix package and is loaded in alongside the sample sheet containing the pheno data for the mice and QCmetrics object created by the calcMouseMethQCmetrics.r script
 
 ```{r, make rgSet,  warning=FALSE, message=FALSE, echo = FALSE}
 
@@ -31,97 +34,53 @@ library(ENmix)
 library(ggplot2)
 library(dplyr)
 library(minfi)
-library(geneplotter)
-library(sesame)
-library(wateRmelon)
+#library(geneplotter)
+#library(sesame)
+#library(wateRmelon)
 library(gridExtra)
-library(RColorBrewer)
+#library(RColorBrewer)
 
-setwd("~/OneDrive - University of Exeter/Documents/methylation/RawData_Mouse_DNAm/")
+setwd("/lustre/projects/Research_Project-191406/cellSortedEWAS")
 
-# Mouse Methylation manifest altered to replace numbers in Infinium_Design_Type column with Roman numerals
-rgSet <- readidat(path = "idats/",manifestfile="../MouseMethylation-12v1-0_A2.csv",recursive = TRUE)
-
-# load pre-collated data
-load("MouseArray_ALL_rgSet.rdata")
-
-# get metadata
-sample_sheet <- read.csv("PhenoALL.csv")
-# NB Chip.ID col invalid. Use Chip Number / basename prefix instead
-
-# Remove space from DN nuclei fraction factors
-sample_sheet$Nuclei_Fraction[sample_sheet$Nuclei_Fraction == "DN "] <- "DN"
-
-# define groups as NeuN and non-NeuN
-sample_sheet$Nuclei_Fraction_NeuN <- ifelse(sample_sheet$Nuclei_Fraction == "NeuN", "NeuN-positive", "NeuN-negative")
-
-```
+source("config.r")
 
 
-# 1b Remove transgenic samples
 
-```{r filter_for_wildtypes, include=FALSE, echo = FALSE}
+sampleSheet <- read.csv(pheno, stringsAsFactors = F)
 
-# remove TG from data
-sample_sheet <- filter(sample_sheet, Group == "WT")
-rgSet <- rgSet[, sample_sheet$Basename]
+load(file = file.path(QCDir, "rgSet.rdat"))
+load(file = file.path(QCDir, "QCmetrics.rdat"))
+
+load(file = file.path(QCDir, "detP.rdat"))
+load(file = file.path(QCDir, "bsCon.rdat"))
+load(file = file.path(QCDir, "detP.rdat"))
+load(file = file.path(QCDir, "mraw.rdat"))
+
+betas <- getB(mraw)
+
+
+# add column for neun and non neun celltypes
+QCmetrics$NeuN <- ifelse(QCmetrics$Cell_Type == "NEUN", "NEUN", "OTHER")
 
 ```
 
-# 2 Intensity check
+# Intensity check
 
 The intensity check is often the biggest indicator of sample quality. The median methylated signal intensity and unmethylated signal intensity for each sample is calculated.
 
-
-```{r medianintensities, include=FALSE, echo = FALSE}
-
-library(SummarizedExperiment)
-
-mraw <- getmeth(rgSet)
-
-m_intensities <- assays(mraw)$Meth
-u_intensities <- assays(mraw)$Unmeth
-
-M.median <- apply(m_intensities, 2, median)
-U.median <- apply(u_intensities, 2, median)
-
-M.mean <- apply(m_intensities, 2, mean)
-U.mean <- apply(u_intensities, 2, mean)
-
-
-M <- as.data.frame(M.median)
-M$M.mean <- M.mean
-M$Basename <- rownames(M)
-
-U <-as.data.frame(U.median)
-U$U.mean <- U.mean
-U$Basename <- rownames(U)
-
-
-# make QC metrics object
-QCmetrics <- left_join(sample_sheet, M, by = "Basename")
-QCmetrics <- left_join(QCmetrics, U, by = "Basename")
-
-hist(QCmetrics$M.median)
-hist(QCmetrics$U.median)
-
-threshold = 2000       ## taken from previous code version
-
-QCmetrics$IntensityTest <- ifelse(QCmetrics$M.median > 2000 & QCmetrics$U.median > 2000, "pass", "fail")
-
-
-```
+`r sum(!QCmetrics$IntensityPass)` samples fail at an intensity threshold of `r intensThresh`
 
 
 # Intensity plots
 
 ```{r plotintensities, echo=FALSE, message=F, dev=c('png', 'pdf')}
 
-# ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Group)) +
-#   geom_point() +
-#   xlab("Median M intensity") +
-#   ylab("Median U intensity") +
-#   ggtitle("Signal Intensities by genotype")
+
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Group)) +
+   geom_point() +
+   xlab("Median M intensity") +
+   ylab("Median U intensity") +
+   ggtitle("Signal Intensities by genotype")
 
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Age)) +
   geom_point() +
@@ -129,17 +88,17 @@ ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Age)) +
   ylab("Median U intensity") +
   ggtitle("Signal Intensities by age")
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Nuclei_Fraction))+
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Cell_Type))+
   geom_point()+
   xlab("Median M intensity")+
   ylab("Median U intensity") + 
   ggtitle("Signal Intensities by nuclei fraction")
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Nuclei_Fraction_NeuN))+
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = NeuN))+
   geom_point()+
   xlab("Median M intensity")+
   ylab("Median U intensity") + 
-  ggtitle("Signal Intensities by nuclei fraction")
+  ggtitle("Signal Intensities by NeuN fraction")
 
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Sex))+
   geom_point()+
@@ -153,25 +112,18 @@ ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = gsub("_.*", "", Basen
   ylab("Median U intensity") +
   ggtitle("Signal Intensities by Chip")
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = N_nuclei)) +
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = N_Nuclei)) +
   geom_point() +
   xlab("Median M intensity") +
   ylab("Median U intensity") +
   ggtitle("Signal Intensities by N nuclei")
 
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = substr(Plate_Location, 1, 1))) +
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Batch)) +
   geom_point() +
   xlab("Median M intensity") +
   ylab("Median U intensity") +
-  ggtitle("Signal Intensities by row")
-
-
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = substr(Plate_Location, 2, 2))) +
-  geom_point() +
-  xlab("Median M intensity") +
-  ylab("Median U intensity") +
-  ggtitle("Signal Intensities by column")
+  ggtitle("Signal Intensities by Batch")
 
 
 ```
@@ -180,40 +132,13 @@ ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = substr(Plate_Location
 
 ```{r, pfilt, echo=FALSE}
 
-detP <- calcdetP(rgSet) 
-
-pFail <- detP > 0.05
-
-#colSums(pFail)
-probeFail <- rowSums(pFail)
-
-# check if any samples have > 1% of probes with a detection p value of > 0.05
-pfiltdf <- data.frame(matrix(ncol = 2, nrow = nrow(QCmetrics)))
-colnames(pfiltdf) <- c("Basename", "PercProbes")
-for(i in 1:ncol(detP)){
-  #print(paste0(colnames(detP)[i], " - ", (sum(detP[,i] > 0.05)/nrow(detP)*100)))
-  pfiltdf$Basename[i] <- colnames(detP)[i]
-  pfiltdf$PercProbes[i] <- sum(detP[,i] > 0.05)/nrow(detP)*100
-}
-
-pfiltdf$Pfilt_test <- ifelse(pfiltdf$PercProbes > 1, "fail", "pass")
-
-QCmetrics <- left_join(QCmetrics, pfiltdf, by = "Basename")
-
-# check if any probes fail in more than 1% of samples
-
-failedProbes <- rownames(detP)[((rowSums(detP > 0.05)/ncol(detP)) * 100) > 5]
-
-#length(failedProbes) #[1] 4138
-
-#remove failed probes
-rgSet <- rgSet[!rgSet@elementMetadata$Name %in% failedProbes, ]
-
+failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
 
 ```
-Most (200219) probes fail at a 1% samples threshold. 
 
-5% threshold used: 4138 probes failed.
+`r length(failedProbes)` probes fail at a pvalue threshold of `r pFiltProbeThresh` in more than `r pFiltSampleThresh`% of samples
+
+
 
 
 ```{r heatmaps, echo=FALSE, message=F}
@@ -262,294 +187,35 @@ ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "png")
 ###################
 ```
 
-# 3  Bisulphite Conversion
-
-# histogram of median % BS conversion for type I probes only (no green for type II)
+# Bisulphite Conversion
 
 ```{r bisulphiteconversion, echo=FALSE}
 
-ctrls <- metadata(rgSet)$ictrl
-ctrls <- ctrls[ctrls$Address %in% rownames(rgSet),]
-ctrl_r <- assays(rgSet)$Red[ctrls$Address,]
-ctrl_g <- assays(rgSet)$Green[ctrls$Address,]
-
-
-# from here: https://emea.support.illumina.com/bulletins/2021/07/infinium-mouse-methylation-beadchip-genomestudio-controls-interp.html
-green1 <- c("BS1-396C_MUS", "BS1-396U_MUS", "BS1-140C_MUS", "BS1-140U_MUS")
-red1 <- c("BS1-409C_MUS", "BS1-409U_MUS", "BS1-318C_MUS", "BS1-318U_MUS", "BS1-317C_MUS", "BS1-317U_MUS")
-red2 <- c("BS2-330_MUS", "BS2-505_MUS", "BS2-649_MUS")
-
-#green
-cc=ctrls[(ctrls$ExtendedType %in% green1),]
-I_green=colMedians(ctrl_g[cc$Address,])
-
-#red
-cc=ctrls[(ctrls$ExtendedType %in% red1),]
-I_red=colMedians(ctrl_r[cc$Address,])
-
-cc=ctrls[(ctrls$ExtendedType %in% red2),]
-II_red=colMedians(ctrl_r[cc$Address,])
-
-
-BSI.betas <- I_red/(I_red + I_green)
-Bisulphite <- BSI.betas*100
-hist(Bisulphite, xlab = "Median % BS conversion", main = "Bisulphite Converstion Statistics")
-png("Bisulphite_conversion.png", width = 800, height = 600)
-hist(Bisulphite, xlab = "Median % BS conversion", main = "Bisulphite Converstion Statistics")
-dev.off()
+ggplot(QCmetrics, aes(x = BsCon))+
+  geom_histogram()+
+  geom_vline(xintercept=bsConThresh, colour = "red", linetype="dashed")
 
 
 ```
 
-"We would generally hope for the majority of samples to be > 80%. The reason the numbers here are lower could be due to the difference in 'expected intensities' for the probes shown in table 2 on the illumina website."
-
-The plot below shows the intensities for all the control probes grouped by their expected intensities.  
-
-
-```{r bisulphiteconversion boxplots, echo=FALSE, message=F}
-
-# green
-cc <- as.data.frame(ctrls[(ctrls$ExtendedType %in% green1),])
-I_green <- t(ctrl_g[cc$Address,])
-colnames(I_green) <- c("high", "low", "background", "background")
-I_green <- reshape2::melt(I_green)
-colnames(I_green) <- c("Basename", "ExpectedIntensity", "Intensity")
-I_green$ExpectedIntensity <- as.factor(I_green$ExpectedIntensity)
-I_green$channel <- "green_I"
-
-# ggplot(I_green, aes(ExpectedIntensity, Intensity)) + geom_boxplot()
-
-
-# red I
-cc=ctrls[(ctrls$ExtendedType %in% red1),]
-I_red=t(ctrl_r[cc$Address,])
-colnames(I_red) <- c("high", "medium", "low", "background", "background", "background")
-I_red <- reshape2::melt(I_red)
-colnames(I_red) <- c("Basename", "ExpectedIntensity", "Intensity")
-I_red$ExpectedIntensity <- as.factor(I_red$ExpectedIntensity)
-I_red$channel <- "red_I"
-
-#ggplot(I_red, aes(ExpectedIntensity, Intensity)) + geom_boxplot()
-
-
-# red II
-cc=ctrls[(ctrls$ExtendedType %in% red2),]
-II_red=t(ctrl_r[cc$Address,])
-colnames(II_red) <- c("high", "high", "high")
-II_red <- reshape2::melt(II_red)
-colnames(II_red) <- c("Basename", "ExpectedIntensity", "Intensity")
-II_red$ExpectedIntensity <- as.factor(II_red$ExpectedIntensity)
-II_red$channel <- "red_II"
-
-#ggplot(II_red, aes(ExpectedIntensity, Intensity)) + geom_boxplot()
-
-#combine together
-plotdf <- rbind(I_green, I_red, II_red)
-colnames(plotdf)[4] <- "ProbeType"
-plotdf$ExpectedIntensity <- factor(plotdf$ExpectedIntensity, levels = c("high", "medium", "low" , "background"))
-ggplot(plotdf, aes(ExpectedIntensity, Intensity, fill = ProbeType))+
-  geom_boxplot()+
-  ggtitle("Bisulphite Conversion Control Probes")+
-  scale_fill_manual(values=c("#00CC66", "#CC3300", "#FF00CC"))
-ggsave("Bisulphite Conversion Control Probes.png")
-
-#QCmetrics$BSconFail <- "Pass"
+`r sum(!QCmetrics$BsConPass)` samples fail at an intensity threshold of `r bsConThresh`
 
 
 
-```
-
-# Remove failed samples
-```{r remove failed samples, echo=FALSE}
-
-pass_QC <- QCmetrics$Basename[QCmetrics$IntensityTest == "pass" & QCmetrics$Pfilt_test == "pass"]
-sample_sheet <- sample_sheet[sample_sheet$Basename %in% pass_QC, ]
-rgSet <- rgSet[, colnames(rgSet) %in% pass_QC]
-
-```
-
-# Get beta and M values
-https://www.bioconductor.org/packages/release/workflows/vignettes/methylationArrayAnalysis/inst/doc/methylationArrayAnalysis.html
-
-```{r get normalised values function, echo=FALSE}
-
-mraw <- getmeth(rgSet)
-m_intensities <- assays(mraw)$Meth
-u_intensities <- assays(mraw)$Unmeth
-
-betas <- m_intensities/(m_intensities + u_intensities)
-
-# mVals <- log2(m_intensities / u_intensities)
-
-```
+# Density Plots
 
 ```{r density plots, echo = FALSE, message = F}
 
-betas <- betas[, sample_sheet$Basename]
-identical(colnames(betas), sample_sheet$Basename) # this is now true
-# mVals <- mVals[, sample_sheet$Basename]
-# identical(colnames(mVals), sample_sheet$Basename) # this is now true
+betas <- betas[, QCmetrics$Basename]
 
-densityPlot(betas, main = "Betas", sampGroups = sample_sheet$Nuclei_Fraction_NeuN)
-png("Betas_density.png", height = 600, width = 800)
-densityPlot(betas, main = "Betas", sampGroups = sample_sheet$Nuclei_Fraction)
-dev.off()
+densityPlot(betas, main = "All Betas", sampGroups = QCmetrics$Cell_Type)
+densityPlot(betas, main = "Passed Samples", sampGroups = QCmetrics$PassQC1)
 
-# densityPlot(mVals, main = "M-values", sampGroups = sample_sheet$Nuclei_Fraction)
-# png("mVals_density.png", height = 600, width = 800)
-# densityPlot(mVals, main = "M-values", sampGroups = sample_sheet$Nuclei_Fraction)
-# dev.off()
-
-#multidensity(betas,main="Multidensity") 
-
-```
-
-# Clustering
-
-
-```{r clustering, echo=FALSE, message=F}
-
-#http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-r-prcomp-vs-princomp/
-
-####
-library(gplots)
-
-sigma <- apply(betas, 1, sd)
-heatmap.2(betas[order(sigma, decreasing = TRUE)[1:5000],], main = "Passed Samples top 1000", trace = "none", labCol = sample_sheet$Sample_ID, dendrogram = "column", labRow = "", density.info = "none", scale = "none", cexCol = 0.6)
-
-
-heatmap.2(betas[order(sigma, decreasing = TRUE)[1:100],], main = "Passed Samples top 100", trace = "none", labCol = sample_sheet$Sample_ID, dendrogram = "column", labRow = "", density.info = "none", scale = "none", cexCol = 0.6)
 
 
 ```
 
-```{r pca clustering, echo=FALSE, message=F}
 
-library(factoextra)
-library(dplyr)
-library(stringr)
-
-# replace NAN with 0.5 in 16 cases
-betas[which(is.na(betas))] <- 0.5
-
-pca.res <- prcomp(t(betas))
-
-#scree plot
-fviz_eig(pca.res)
-
-var_explained <- pca.res$sdev^2/sum(pca.res$sdev^2)
-
-plotdf <- as.data.frame(pca.res$x)
-plotdf$Basename <- rownames(plotdf)
-QCmetrics <- filter(QCmetrics, Basename %in% sample_sheet$Basename)
-QCmetrics <- left_join(QCmetrics, plotdf[, c(1:5, ncol(plotdf))], by = "Basename")
-plotdf <- left_join(plotdf, sample_sheet, by = "Basename")
-
-
-# # genotype
-# ggplot(plotdf, aes(x = PC1, y = PC2, colour = Group)) + geom_point(size=4) +
-#   labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-#      y=paste0("PC2: ",round(var_explained[2]*100,1),"%")) +
-#      theme(legend.position="top")
-# ggsave("PC1vsPC2_genotype.png")
-
-# nuclei fraction
-ggplot(plotdf, aes(x = PC1, y = PC2, colour = Nuclei_Fraction)) + geom_point(size=4) +
-  labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-       y=paste0("PC2: ",round(var_explained[2]*100,1),"%")) +
-  theme(legend.position="top")
-ggsave("PC1vsPC2_nuclei.png")
-
-# sex
-ggplot(plotdf, aes(x = PC1, y = PC2, colour = Sex)) + geom_point(size=4) +
-  labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-       y=paste0("PC2: ",round(var_explained[2]*100,1),"%")) +
-  theme(legend.position="top")
-ggsave("PC1vsPC2_sex.png")
-
-# # age
-# ggplot(plotdf, aes(x = PC1, y = PC2, colour = Age)) + geom_point(size=4) +
-#   labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-#      y=paste0("PC2: ",round(var_explained[2]*100,1),"%")) +
-#   theme(legend.position="top")
-# ggsave("PC1vsPC2_age.png")
-# 
-# # Chip
-# ggplot(plotdf, aes(x = PC1, y = PC2, colour = gsub("_.*", "", Basename))) + geom_point(size=4) +
-#   labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-#      y=paste0("PC2: ",round(var_explained[2]*100,1),"%")) +
-#   theme(legend.position="top")
-# ggsave("PC1vsPC2_chip.png")
-
-# nuclei * sex
-plotdf$Nuclei_Sex <- paste(plotdf$Nuclei_Fraction, plotdf$Sex, sep = "_")
-ggplot(plotdf, aes(x = PC1, y = PC2, colour = Nuclei_Sex)) + geom_point(size=4) +
-  labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-       y=paste0("PC2: ",round(var_explained[2]*100,1),"%")) +
-  theme(legend.position="top")
-ggsave("PC1vsPC2_nuclei-sex.png")  
-
-ggplot(plotdf, aes(x = PC1, y = PC3, colour = Nuclei_Sex)) + geom_point(size=4) +
-  labs(x=paste0("PC1: ",round(var_explained[1]*100,1),"%"),
-       y=paste0("PC3: ",round(var_explained[3]*100,1),"%")) +
-  theme(legend.position="top")
-ggsave("PC1vsPC3_nuclei-sex.png")  
-
-
-```
-
-# Separate neuronal and non-neuronal sample betas prior to normalisation
-
-```{r, split cell types, echo = FALSE} 
-table(sample_sheet$Nuclei_Fraction)
-betas.NeuN <- betas[, colnames(betas) %in% sample_sheet$Basename[sample_sheet$Nuclei_Fraction == "NeuN"]]
-betas.DN_PU1 <- betas[, colnames(betas) %in% sample_sheet$Basename[sample_sheet$Nuclei_Fraction != "NeuN"]]
-
-
-```
-
-# Normalisation with wateRmelon
-
-```{r, normalise, echo=FALSE}
-
-normbetas.NeuN <- betaqn(betas.NeuN)
-normbetas.DN_PU1 <- betaqn(betas.DN_PU1)
-
-identical(rownames(normbetas.DN_PU1), rownames(normbetas.NeuN))
-normbetas <- cbind(normbetas.DN_PU1, normbetas.NeuN)
-
-save(normbetas, sample_sheet, file = "MouseArray_CellDeconv_FilteredNormalised_Betas_WT.rdat")
-# save(normbetas.NeuN, file = "MouseArray_CellDeconv_FilteredNormalised_NeuN-Betas.rdat")
-# save(normbetas.DN_PU1, file = "MouseArray_CellDeconv_FilteredNormalised_DN-PU1-Betas.rdat")
-
-# write QC metrics
-write.csv(QCmetrics, "MouseArray_CellDeconv_QCmetrics_WT.csv")
-
-# WRITE M-VALUES
-save(mVals, file = "MouseArray_CellDeconv_Filtered_mVals.rdat")
-
-## Heatmap using normalised betas
-normbetas <- normbetas[, sample_sheet$Basename]
-identical(colnames(normbetas), sample_sheet$Basename)
-png(file="heatmap_top5000_NORM.png",width=800, height=800)
-sigma <- apply(normbetas, 1, sd)
-heatmap.2(betas[order(sigma, decreasing = TRUE)[1:5000],], main = "Passed Samples - top 5000", trace = "none", labCol = sample_sheet$Sample_ID, dendrogram = "column", labRow = "", density.info = "none", scale = "none", cexCol = 0.6)
-dev.off()
-
-```
-
-
-```{r density plots normalized, echo = FALSE, message = F}
-densityPlot(normbetas, main = "Normalised betas", sampGroups = sample_sheet$Nuclei_Fraction)
-
-# reorder columns
-mVals <- mVals[, sample_sheet$Basename]
-# density plot of M-values
-densityPlot(mVals, main = "M-values", sampGroups = sample_sheet$Nuclei_Fraction)
-
-#multidensity(betas,main="Multidensity") 
-
-```
 
 
 

@@ -28,6 +28,8 @@
 #----------------------------------------------------------------------#
 print("loading packages...")
 library(MatrixGenerics)
+library(ENmix)
+library(data.table)
 
 
 source("config.r")
@@ -41,10 +43,39 @@ source("config.r")
 # intensity, pfilt and bscon checks
 
 # these files are not currently filtered...
-load(file = file.path(normDir, "rawBetas.rdat"))
-load(file = file.path(normDir, "QCmetrics.rdat"))
+load(file = file.path(QCDir, "mraw.rdat"))
+betas <- getB(mraw)
 
-QCmetrics$Cell_Type <- trimws(QCmetrics$Cell_Type)
+load(file = file.path(QCDir, "QCmetrics.rdat"))
+
+man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
+
+QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
+                     "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
+                     "PassQC1")]
+
+passQC<-QCSum$Basename[QCSum[,"PassQC1"]]
+
+QCmetrics.all<-QCmetrics
+QCmetrics<-QCmetrics[match(passQC, QCmetrics$Basename),]
+
+rawbetas<-betas[,match(passQC, colnames(betas))]
+
+auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
+
+rawbetas<-rawbetas[row.names(rawbetas) %in% auto.probes,]
+
+cellTypes<-unique(QCmetrics$Cell_Type)
+cellTypes<-cellTypes[!is.na(cellTypes)]
+cellTypes<-sort(cellTypes)
+
+# filter out NAs
+rawbetas<-na.omit(rawbetas)
+
+# filter out SNPs
+betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
+
+
 
 
 #----------------------------------------------------------------------#
@@ -119,7 +150,7 @@ nFACs<-table(QCmetrics$Individual_ID[QCmetrics$Cell_Type != "Total"])
 uniqueIDs<-cbind(uniqueIDs, indFACSEff$x[match(uniqueIDs$Individual_ID, as.character(indFACSEff$Group.1))], as.numeric(nFACs[uniqueIDs$Individual_ID]))
 colnames(uniqueIDs)<-c(keepCols, "FACsEffiency", "nFACS")
 
-write.csv(uniqueIDs, paste0(normDir, "/IndividualFACsEffciencyScores.csv"))
+write.csv(uniqueIDs, paste0(QCDir, "/IndividualFACsEffciencyScores.csv"))
 
 # exclude individuals who hd very poor FACS sorts
 QCmetrics$passFACS<-QCmetrics$Individual_ID %in% uniqueIDs$Individual_ID[which(uniqueIDs$FACsEffiency < 5)]
@@ -211,7 +242,7 @@ satb2NegIndex<-which(QCmetrics$Cell_Type == "SATB2-")
 closestLabelledCellType[satb2NegIndex[!closestCellTypePCA[satb2NegIndex] %in% neunCT]]<-TRUE
 
 QCmetrics<-cbind(QCmetrics, closestCellTypePCA, closestLabelledCellType)
-write.csv(QCmetrics[which(closestLabelledCellType == "FALSE"),], paste0(normDir, "/SamplesPredictedDiffCellTypePCAMahDist.csv"))
+write.csv(QCmetrics[which(closestLabelledCellType == "FALSE"),], paste0(QCDir, "/SamplesPredictedDiffCellTypePCAMahDist.csv"))
 
 #----------------------------------------------------------------------#
 # COMPARE TO CELL TYPE POLYTOPE
@@ -263,7 +294,7 @@ for(thres in outlierThres){
 withinSDMean<-pcaClassify[["withinSDMean"]][,match(studentThres, outlierThres)]
 pcaClassifyDistinctCT<-pcaClassify[["predictCellType"]][,match(studentThres, outlierThres)]
 
-write.csv(QCmetrics[which(withinSDMean == "FALSE"),],paste0(normDir, "/SamplesPCAOutlierFromCellType.csv"))
+write.csv(QCmetrics[which(withinSDMean == "FALSE"),],paste0(QCDir, "/SamplesPCAOutlierFromCellType.csv"))
 
 #----------------------------------------------------------------------#
 # CLASSIFY CORRECT CELL TYPE
@@ -289,4 +320,22 @@ QCmetrics$passCTCheck<-passCTCheck
 # SAVE AND CLOSE
 #----------------------------------------------------------------------#
 
-save(QCmetrics, file=file.path(normDir, "QCmetricsCT.rdat"))
+save(betas.scores, mahDistPCA, pcaClassify, studentPCA, file = paste0(QCDir,"/PCAAcrossAllCellTypes.rdata"))
+
+save(QCmetrics, file=file.path(QCDir, "QCmetricsCT.rdat"))
+
+
+# add outcome to qc summary
+QCmetrics<-QCmetrics[match(QCSum$Basename, QCmetrics$Basename),]
+
+# add in data for samples excluded thus far
+QCmetrics[which(is.na(QCmetrics$withinSDMean)),colnames(QCmetrics.all)]<-QCmetrics.all[which(is.na(QCmetrics$withinSDMean)),]
+
+#QCSum<-QCSum[,-ncol(QCSum)]
+QCSum<-cbind(QCSum, QCmetrics$passFACS, QCmetrics$passCTCheck,  QCmetrics$passFACS & QCmetrics$passCTCheck)
+# retain TOTAL samples
+QCSum[which(QCSum$Cell_Type == "Total" & QCSum$passQCS2 ==TRUE),ncol(QCSum)]<-TRUE
+colnames(QCSum)[(ncol(QCSum)-2):ncol(QCSum)]<-c("passCTCheck", "passFACS", "passQCS3")
+
+write.csv(QCSum, paste0(QCDir,"/passQCStatusStage3AllSamples.csv"))
+write.csv(QCmetrics, paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"))

@@ -19,6 +19,12 @@
 
 ## NB need to be in the cellSortedEWAS dir to run
 
+## The sex info was updated manually in EXCEL according to doc from
+## Nick (re convo with IC and SP)
+
+## mouse 56 M -> F
+## mice 73-75 -> M
+
 #----------------------------------------------------------------------#
 # DEFINE PARAMETERS ETC.
 #----------------------------------------------------------------------#

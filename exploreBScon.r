@@ -66,7 +66,7 @@ load(file.path(normDir, "rgSet.rdat"))
 load("QCmetrics.rdat")
 
 
-# reovme failed samples
+# remove failed samples
 passedOnly <- QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass]
 rgSet <- rgSet[, passedOnly]
 
@@ -99,6 +99,7 @@ boxplot(t(bs.green.type1), col=c('black','green')[factor(green.med>10000)], xlab
 abline(h=10000, lty=3)
 
 redGreater<-rowMeans(bs.red.type1) > rowMeans(bs.green.type1)
+BSconAll<-rbind(BSconAll, BScon.med)*100
 
 BScon1<-rbind(
   bs.red.type1[which(redGreater),] / ( bs.red.type1[which(redGreater),] + bs.green.type1[which(redGreater),] ), 
@@ -110,7 +111,6 @@ BScon2 <- bs.red.type2 / ( bs.red.type2 + bs.green.type2 )
 BSconAll<-rbind(BScon1, BScon2)
 BScon.med<-apply(BSconAll, 2, median)
 hist(BScon.med)
-BSconAll<-rbind(BSconAll, BScon.med)*100
 
 
 boxplot(t(BSconAll), ylab = "% conversion", axes = FALSE)
