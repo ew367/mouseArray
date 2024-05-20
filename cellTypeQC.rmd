@@ -1,19 +1,19 @@
 ---
-  title: "Dementia Mouse Methylation Array Project Quality Control within Cell Type"
+title: "Dementia Mouse Methylation Array Project Quality Control within Cell Type"
 author: "Emma Walker"
 output: 
   html_document:
   toc: true
-toc_float: true
-number_sections: true
+  toc_float: true
+  number_sections: true
 ---
-  ```{r global_options, include=FALSE}
+```{r global_options, include=FALSE}
 knitr::opts_chunk$set(fig.align = "center", warning=FALSE, message=FALSE, echo = FALSE, cache = FALSE)
 ```
 
 ```{r setup, include=FALSE}
 #args<-commandArgs(trailingOnly = TRUE)
-#library(bigmelon)
+library(ENmix)
 library(pheatmap)
 library(pander)
 library(RColorBrewer)
