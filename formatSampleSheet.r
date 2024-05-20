@@ -101,4 +101,13 @@ n180 <- n180 %>% dplyr::select(all_of(colsNeeded))
 
 sampleSheet <- rbind(n24,n180)
 
+
+#----------------------------------------------------------------------#
+# add new col for Cell_Type
+#----------------------------------------------------------------------#
+
+sampleSheet <- sampleSheet %>% rename(Full_Cell_Type = "Cell_Type")
+sampleSheet$Cell_Type <- ifelse(sampleSheet$Full_Cell_Type == "NEUN", "NEUNpos", "NEUNneg")
+
+
 write.csv(sampleSheet, "0_metadata/sampleSheet.csv", row.names = F)

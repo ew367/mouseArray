@@ -50,9 +50,11 @@ load(file = file.path(QCDir, "QCmetrics.rdat"))
 
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
-QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
-                     "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
-                     "PassQC1")]
+#QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
+                     #"IntensityPass", "PfiltPass", "BsConPass", "sexPass",
+                     #"PassQC1")]
+
+QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
 
 passQC<-QCSum$Basename[QCSum[,"PassQC1"]]
 
@@ -141,6 +143,7 @@ for(i in 1:nrow(QCmetrics)){
 #----------------------------------------------------------------------#
 # CALCULATE INDIVIDUAL FACS SCORE
 #----------------------------------------------------------------------#
+
 keepCols<-c("Individual_ID", "Sex", "Age", "Group", "Batch")
 keepCols<-keepCols[keepCols %in% colnames(QCmetrics)]
 uniqueIDs<-unique(QCmetrics[,keepCols])
@@ -322,9 +325,6 @@ QCmetrics$passCTCheck<-passCTCheck
 
 save(betas.scores, mahDistPCA, pcaClassify, studentPCA, file = paste0(QCDir,"/PCAAcrossAllCellTypes.rdata"))
 
-save(QCmetrics, file=file.path(QCDir, "QCmetricsCT.rdat"))
-
-
 # add outcome to qc summary
 QCmetrics<-QCmetrics[match(QCSum$Basename, QCmetrics$Basename),]
 
@@ -339,3 +339,5 @@ colnames(QCSum)[(ncol(QCSum)-2):ncol(QCSum)]<-c("passCTCheck", "passFACS", "pass
 
 write.csv(QCSum, paste0(QCDir,"/passQCStatusStage3AllSamples.csv"))
 write.csv(QCmetrics, paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"))
+
+save(QCmetrics, file=file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))

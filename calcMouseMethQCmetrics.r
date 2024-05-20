@@ -40,7 +40,6 @@ source("config.r")
 #----------------------------------------------------------------------#
 
 sampleSheet <- read.csv(pheno, stringsAsFactors = F)
-sampleSheet$Cell_Type <- trimws(sampleSheet$Cell_Type)
 
 if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
   print("Loading rgSet")
@@ -52,6 +51,9 @@ if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
 }
 
 
+# Exclude empty wells
+sampleSheet <- sampleSheet[!sampleSheet$Basename %in% empty,]
+rgSet <- rgSet[,sampleSheet$Basename]
 
 
 #----------------------------------------------------------------------#
@@ -94,6 +96,7 @@ QCmetrics <- left_join(QCmetrics, U, by = "Basename")
 QCmetrics$IntensityPass <- ifelse(QCmetrics$M.median > 2000 & QCmetrics$U.median > 2000, TRUE, FALSE)
 
 
+
 #----------------------------------------------------------------------#
 # P FILTER
 #----------------------------------------------------------------------#
@@ -126,6 +129,7 @@ QCmetrics <- left_join(QCmetrics, pfiltdf, by = "Basename")
 failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
 
 
+
 #----------------------------------------------------------------------#
 # BISULPHITE CONVERSION
 #----------------------------------------------------------------------#
@@ -138,7 +142,7 @@ if(file.exists(file = file.path(QCDir, "bsCon.rdat"))){
 ctrls <- metadata(rgSet)$ictrl
 
 # subset to just mouse specific probes
-bs.type1 <- ctrls$Address[ctrls$Type == "BISULFITE CONVERSION I"][11:20]
+bs.type1 <- ctrls$Address[ctrls$Type == "BISULFITE CONVERSION I"][11:15]
 bs.type2 <- ctrls$Address[ctrls$Type == "BISULFITE CONVERSION II"][4:6]
 
 bs.green.type1 <- assays(rgSet)$Green[bs.type1,]
@@ -167,10 +171,11 @@ BScon.med <- BScon.med[QCmetrics$Basename]*100
 
 save(BSconAll, file=file.path(QCDir, "bsCon.rdat"))
 print("bsCon object created and saved")
+
 }
 
 
-QCmetrics$BsCon <- BScon.med
+QCmetrics$BsCon <- BSconAll["BScon.med",]
 QCmetrics$BsConPass <- ifelse(QCmetrics$BsCon > bsConThresh, TRUE, FALSE)
   
 
@@ -200,16 +205,16 @@ QCmetrics$sexPass <- ifelse(QCmetrics$PredSex == QCmetrics$Sex, TRUE, FALSE)
 # REMOVE SAMPLES/PROBES THAT FAIL THE FIRST QC STAGE
 #----------------------------------------------------------------------#
 
-#note this does not currently exclude sex mismatch exclusion
+#rgSetPass <- rgSet[ ,QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$sexPass]]
 
-#sampleSheet <- sampleSheet[sampleSheet$Basename %in% QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass],]
-
-rgSetPass <- rgSet[ ,QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass]]
-
-#remove failed probes
-rgSetPass <- rgSetPass[!rgSet@elementMetadata$Name %in% failedProbes, ]
+#remove failed probes from betas object
+#rgSetPass <- rgSetPass[!rgSet@elementMetadata$Name %in% failedProbes, ]
 
 QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$sexPass
+
+QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
+                     "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
+                     "PassQC1")]
 
 
 #----------------------------------------------------------------------#
@@ -217,4 +222,8 @@ QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$B
 #----------------------------------------------------------------------#
 
 save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
-save(rgSetPass, file=file.path(QCDir, "rgSetPass.rdat"))
+write.csv(QCSum, file.path(QCDir, "passQCStatusStage1AllSamples.csv"), row.names = F)
+
+#save(rgSetPass, file=file.path(QCDir, "rgSetPass.rdat"))
+
+

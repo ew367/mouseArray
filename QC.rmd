@@ -8,6 +8,7 @@ output:
     number_sections: true
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -93,12 +94,6 @@ ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Cell_Type))+
   xlab("Median M intensity")+
   ylab("Median U intensity") + 
   ggtitle("Signal Intensities by nuclei fraction")
-
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = NeuN))+
-  geom_point()+
-  xlab("Median M intensity")+
-  ylab("Median U intensity") + 
-  ggtitle("Signal Intensities by NeuN fraction")
 
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Sex))+
   geom_point()+

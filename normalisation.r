@@ -15,60 +15,108 @@
 # NOTES
 #----------------------------------------------------------------------#
 
-# holding code from NC
+
+#----------------------------------------------------------------------#
+# LOAD PACKAGES
+#----------------------------------------------------------------------#
+print("loading packages...")
+library(data.table)
+library(wateRmelon)
+library(ENmix)
 
 
-# Separate neuronal and non-neuronal sample betas prior to normalisation
-
-```{r, split cell types, echo = FALSE} 
-table(sample_sheet$Nuclei_Fraction)
-betas.NeuN <- betas[, colnames(betas) %in% sample_sheet$Basename[sample_sheet$Nuclei_Fraction == "NeuN"]]
-betas.DN_PU1 <- betas[, colnames(betas) %in% sample_sheet$Basename[sample_sheet$Nuclei_Fraction != "NeuN"]]
+source("config.r")
 
 
-```
 
-# Normalisation with wateRmelon
+#----------------------------------------------------------------------#
+# IMPORT DATA
+#----------------------------------------------------------------------#
 
-```{r, normalise, echo=FALSE}
+# get raw betas for all samples
+load(file = file.path(QCDir, "mraw.rdat"))
+rawbetas <- getB(mraw)
 
-normbetas.NeuN <- betaqn(betas.NeuN)
-normbetas.DN_PU1 <- betaqn(betas.DN_PU1)
+# load detP for removing failed probes
+load(file = file.path(QCDir, "detP.rdat"))
 
-identical(rownames(normbetas.DN_PU1), rownames(normbetas.NeuN))
-normbetas <- cbind(normbetas.DN_PU1, normbetas.NeuN)
+# load manifest for removing sex probes and mfg_flagged probes
+man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
-save(normbetas, sample_sheet, file = "MouseArray_CellDeconv_FilteredNormalised_Betas_WT.rdat")
-# save(normbetas.NeuN, file = "MouseArray_CellDeconv_FilteredNormalised_NeuN-Betas.rdat")
-# save(normbetas.DN_PU1, file = "MouseArray_CellDeconv_FilteredNormalised_DN-PU1-Betas.rdat")
+# load QCmetrics summary to remove failed samples
+QCSum <- read.csv(file.path(QCDir, "passQCStatusStage3AllSamples.csv"), stringsAsFactors = F)
+QCSum <- na.omit(QCSum)
+passQC <- QCSum$Basename[QCSum$passQCS3]
 
-# write QC metrics
-write.csv(QCmetrics, "MouseArray_CellDeconv_QCmetrics_WT.csv")
+# load QCmetrics to get cell_Type data
+load(file = file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
+QCmetrics <- QCmetrics[QCmetrics$Basename %in% passQC,]
+     
 
-# WRITE M-VALUES
-save(mVals, file = "MouseArray_CellDeconv_Filtered_mVals.rdat")
+#----------------------------------------------------------------------#
+# REMOVE FAILED PROBES AND SAMPLES
+#----------------------------------------------------------------------#
 
-## Heatmap using normalised betas
-normbetas <- normbetas[, sample_sheet$Basename]
-identical(colnames(normbetas), sample_sheet$Basename)
-png(file="heatmap_top5000_NORM.png",width=800, height=800)
-sigma <- apply(normbetas, 1, sd)
-heatmap.2(betas[order(sigma, decreasing = TRUE)[1:5000],], main = "Passed Samples - top 5000", trace = "none", labCol = sample_sheet$Sample_ID, dendrogram = "column", labRow = "", density.info = "none", scale = "none", cexCol = 0.6)
-dev.off()
+# filter out SNPs
+betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
 
-```
+# filter flagged probes
+flagged.probes<-man$IlmnID[man$MFG_Change_Flagged == TRUE]
+betas <- betas[!row.names(betas) %in% flagged.probes,]
+
+# filter sex and MT probes
+auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
+betas<-betas[row.names(betas) %in% auto.probes,]
+
+# filter detP failed probes
+failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
+betas<-betas[!row.names(betas) %in% failedProbes,]
 
 
-```{r density plots normalized, echo = FALSE, message = F}
-densityPlot(normbetas, main = "Normalised betas", sampGroups = sample_sheet$Nuclei_Fraction)
+# filter samples failed any stage of QC
+betas <- betas[,passQC]
 
-# reorder columns
-mVals <- mVals[, sample_sheet$Basename]
-# density plot of M-values
-densityPlot(mVals, main = "M-values", sampGroups = sample_sheet$Nuclei_Fraction)
+mrawPass <- mraw[row.names(betas), colnames(betas)]
 
-#multidensity(betas,main="Multidensity") 
 
-```
+#----------------------------------------------------------------------#
+# NORMALISE (WITHIN CELL TYPE FOR CELL SORTED DATA)
+#----------------------------------------------------------------------#
+
+#### This needs to be checked still!!
+## also make sure that cols/rows are in same order before saving
+
+cellTypes<-unique(QCmetrics$Cell_Type)
+
+if(cellSorted == TRUE){
+  
+  celltypeNormbeta<-matrix(NA, nrow = nrow(assays(mrawPass)$Meth), ncol = ncol(assays(mrawPass)$Meth))
+  rownames(celltypeNormbeta)<-rownames(betas)
+  colnames(celltypeNormbeta)<-colnames(bbetas)
+  for(each in cellTypes){
+    index<-which(QCmetrics$Cell_Type == each)
+    if(length(index) > 2){
+      celltypeNormbeta[,index]<-adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
+    }
+  }
+  
+  save(celltypeNormbeta, QCmetrics, file = normData)
+} else{
+  normBeta <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
+  save(normbeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
+}
+
+
+
+
+
+#normalised_betas <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
+
+
+
+#----------------------------------------------------------------------#
+# SAVE AND CLOSE
+#----------------------------------------------------------------------#
+
 
 
