@@ -1,8 +1,8 @@
-# submission script#!/bin/bash
+#!/bin/bash
 #SBATCH --export=ALL #export all enviroment variables to the batch job
 #SBATCH -p mrcq #submit to the serial queue
 #SBATCH --time=24:00:00 ##maximum wall time for the job
-#SBATCH -A Research_Project-191406 #research project to submit under
+#SBATCH -A Research_Project-MRC190311 #research project to submit under
 #SBATCH --nodes=1 #specify number of nodes
 #SBATCH --ntasks-per-node=16 # specify number of processors per node
 #SBATCH --mail-type=END # send email at job completion
@@ -26,7 +26,7 @@ echo Job started on:
 JOBNAME="QCDNAdata"
 
 echo Job sumbitted from:
-  $SLURM_SUBMIT_DIR
+  echo $SLURM_SUBMIT_DIR
 
 # Move the user to the project directory
 cd $1
