@@ -7,7 +7,7 @@
 ##
 ##                    Remove flagged probes
 ##
-##                    Normalise the data within celltype
+##                    Normalise the data within celltype and save
 ##
 ##---------------------------------------------------------------------#
 
@@ -26,8 +26,6 @@ library(ENmix)
 
 
 source("config.r")
-
-
 
 #----------------------------------------------------------------------#
 # IMPORT DATA
@@ -57,26 +55,28 @@ QCmetrics <- QCmetrics[QCmetrics$Basename %in% passQC,]
 # REMOVE FAILED PROBES AND SAMPLES
 #----------------------------------------------------------------------#
 
-# filter out SNPs
+print("filtering SNPs...")
 betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
 
-# filter flagged probes
+print("filtering flagged probes...")
 flagged.probes<-man$IlmnID[man$MFG_Change_Flagged == TRUE]
 betas <- betas[!row.names(betas) %in% flagged.probes,]
 
-# filter sex and MT probes
+print("filtering sex and MT probes...")
 auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
 betas<-betas[row.names(betas) %in% auto.probes,]
 
-# filter detP failed probes
+print("filtering detP failed probes...")
 failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
 betas<-betas[!row.names(betas) %in% failedProbes,]
 
 
-# filter samples failed any stage of QC
+print("filtering samples failed any stage of QC...")
 betas <- betas[,passQC]
 
+# filter mraw object to retain intens info for normalisation
 mrawPass <- mraw[row.names(betas), colnames(betas)]
+
 
 
 #----------------------------------------------------------------------#
@@ -89,34 +89,28 @@ mrawPass <- mraw[row.names(betas), colnames(betas)]
 cellTypes<-unique(QCmetrics$Cell_Type)
 
 if(cellSorted == TRUE){
+  print("normalising within cell type...")
   
   celltypeNormbeta<-matrix(NA, nrow = nrow(assays(mrawPass)$Meth), ncol = ncol(assays(mrawPass)$Meth))
   rownames(celltypeNormbeta)<-rownames(betas)
-  colnames(celltypeNormbeta)<-colnames(bbetas)
+  colnames(celltypeNormbeta)<-colnames(betas)
   for(each in cellTypes){
+    print(each)
     index<-which(QCmetrics$Cell_Type == each)
     if(length(index) > 2){
-      celltypeNormbeta[,index]<-adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
+      celltypeNormbeta[,index]<-as/matrix(adjustedDasen(mns = assays(mrawPass)$Meth[,index], uns = assays(mrawPass)$Unmeth[,index], onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr))
     }
   }
   
-  save(celltypeNormbeta, QCmetrics, file = normData)
+  save(celltypeNormbeta, QCmetrics,  file = file.path(normDir, "normalisedData.rdat"))
+  print("normalised QC object saved")
 } else{
+  print("normalising bulk tissue...")
   normBeta <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
   save(normbeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
 }
 
 
-
-
-
-#normalised_betas <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
-
-
-
-#----------------------------------------------------------------------#
-# SAVE AND CLOSE
-#----------------------------------------------------------------------#
 
 
 
