@@ -42,11 +42,17 @@
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
 
+library(lme4)
+library(lmerTest)
+library(dplyr)
 
 
 #----------------------------------------------------------------------#
 # DEFINE ANALYSIS FUNCTION
 #----------------------------------------------------------------------#
+
+# if cell type = neun+ source functions without random terms
+# if cell type = neun- source functions w/ random terms
 
 runEWAS<-function(row,QCmetrics){
   
@@ -74,14 +80,12 @@ library(doParallel)
 #----------------------------------------------------------------------#
 
 args<-commandArgs(trailingOnly = TRUE)
-dataDir <- args[1]
-#dataDir <- "/lustre/projects/Research_Project-MRC190311/DNAm/MRC"
-cellType <- args[2]
-#cellType <- "NeuN+"
+#dataDir <- args[1]
+#cellType <- args[2]
+cellType <- "NEUNpos"
 
-normData<-file.path(dataDir, "3_normalised/normalised.rdata")
-CETYGOdata<-file.path(dataDir, "CETYGO/predictedProportions_MRC_SCZ.rdat")
-resPath<-file.path(dataDir, "CETYGO/EWAS/")
+
+normData<-file.path(dataDir, "2_normalised/normalisedData.rdat")
 
 #----------------------------------------------------------------------#
 # LOAD AND PREPARE DATA
@@ -89,35 +93,27 @@ resPath<-file.path(dataDir, "CETYGO/EWAS/")
 
 setwd(dataDir)
 load(normData)
-load(CETYGOdata)
+elisa <- read.csv("0_metadata/AB42ELISAconcentrations.csv", stringsAsFactors = F) # pathology data
+
+
+# add in pathology data
+elisa$Individual_ID <- as.character(elisa$Sample_ID)
+elisa$Pathology <- elisa$Mean_N3
+
+QCmetrics <- left_join(QCmetrics, elisa %>% dplyr::select(Individual_ID, Pathology))
+QCmetrics$Group <- as.factor(QCmetrics$Group)
 
 print(paste0("running EWAS on ", cellType, " cell type..."))
 ## subset to cell type samples
-QCmetrics<-QCmetrics[which(QCmetrics$Cell.type == cellType),]
-
-# filter to schizophrenia and control only
-QCmetrics<-QCmetrics[QCmetrics$Phenotype %in% c("Schizophrenia", "Control"),]
+QCmetrics<-QCmetrics[which(QCmetrics$Cell_Type == cellType),]
 
 
-# add CETYGO proportions
-
-if (cellType == "Double-"){
-  QCmetrics$Cell.Proportions <- predPropAll$IDOL[[5]][QCmetrics$Basename, "NeuNNeg_Sox10Neg_IRF8Pos"]
-} else if (cellType == "NeuN+"){
-  QCmetrics$Cell.Proportions <- predPropAll$ANOVA[[6]][QCmetrics$Basename, "NeuNPos_SOX6Pos"]
-} else if (cellType == "Sox10+"){
-  stop("Run separate script for Sox10+ data")
-} else {
-  stop("Cell Type not recognised....")
-}
-
-
-
-# subset beta matrix to analysis samples
+# subset beta matrix to cell type specific samples
 celltypeNormbeta<-celltypeNormbeta[,QCmetrics$Basename]
 
 # take top 100 rows for debugging
-#betasSub <- celltypeNormbeta[1:100,]
+betasSub <- celltypeNormbeta[1:100,]
+meanBetas <- colMeans(celltypeNormbeta)
 
 #----------------------------------------------------------------------#
 # INTITATE PARALLEL ENV
