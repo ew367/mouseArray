@@ -98,7 +98,7 @@ if(cellSorted == TRUE){
     print(each)
     index<-which(QCmetrics$Cell_Type == each)
     if(length(index) > 2){
-      celltypeNormbeta[,index]<-as/matrix(adjustedDasen(mns = assays(mrawPass)$Meth[,index], uns = assays(mrawPass)$Unmeth[,index], onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr))
+      celltypeNormbeta[,index]<-as.matrix(adjustedDasen(mns = assays(mrawPass)$Meth[,index], uns = assays(mrawPass)$Unmeth[,index], onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr))
     }
   }
   
