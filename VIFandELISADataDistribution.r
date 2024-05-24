@@ -35,7 +35,11 @@ elisa$Individual_ID <- as.character(elisa$Sample_ID)
 elisa$Pathology <- elisa$Mean_N3
 
 QCmetrics <- left_join(QCmetrics, elisa %>% dplyr::select(Individual_ID, Pathology))
-QCmetrics$Group <- as.factor(QCmetrics$Group)
+
+QCmetrics$DummyGroup <- ifelse(QCmetrics$Group == "TG", 1, 0)
+QCmetrics$InteractionTerm <- QCmetrics$DummyGroup*QCmetrics$Age
+#QCmetrics$Group <- as.factor(QCmetrics$Group)
+
 
 
 
@@ -58,7 +62,7 @@ ggplot(QCmetrics, aes(x = Pathology, fill = Group))+
 # missing nuclei number at the moment - add once confirmed by wet lab team
 # age*group here represents pathology
 
-meanBetas <- colMeans(celltypeNormbeta)
+meanBetas <- colMeans(celltypeNormbeta) 
 
 # group*age and pathology model
 fullmodel <- lm(meanBetas ~ QCmetrics$Group + QCmetrics$Age*QCmetrics$Group + QCmetrics$Pathology + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch) 
@@ -83,6 +87,15 @@ vif(nullneunModel)
 
 
 
+# with dummy interaction variable
+
+fullDumModel <- lm(meanBetas ~ QCmetrics$Group + QCmetrics$InteractionTerm + QCmetrics$Pathology + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch) 
+
+vif(fullDumModel)
+
+noPathDumModel <- lm(meanBetas ~ QCmetrics$Group + QCmetrics$InteractionTerm + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch) 
+
+vif(noPathDumModel)
 
 
 
