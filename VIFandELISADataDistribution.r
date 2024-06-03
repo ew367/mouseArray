@@ -48,10 +48,15 @@ QCmetrics$InteractionTerm <- QCmetrics$DummyGroup*QCmetrics$Age
 #----------------------------------------------------------------------#
 
 
-ggplot(QCmetrics, aes(x = Pathology, fill = Group))+
-  geom_histogram(position = "dodge")+
-  ggtitle("Elisa concentrations (pathology)")
+#ggplot(QCmetrics, aes(x = Pathology, fill = Group))+
+ # geom_histogram(position = "dodge")+
+  #ggtitle("Elisa concentrations (pathology)")
 
+pdf("3_analysis/plots/ElisaConcsByGroupLinePlot.pdf")
+ggplot(QCmetrics, aes(x = Age, y = Pathology, colour = Group))+
+  geom_line()+
+  ggtitle("Elisa concentrations (pathology)")
+dev.off()
 
 
 #----------------------------------------------------------------------#
@@ -96,6 +101,10 @@ vif(fullDumModel)
 noPathDumModel <- lm(meanBetas ~ QCmetrics$Group + QCmetrics$InteractionTerm + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch) 
 
 vif(noPathDumModel)
+
+noIntDumModel <- lm(meanBetas ~ QCmetrics$Group + QCmetrics$Pathology + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch) 
+
+vif(noIntDumModel)
 
 
 
