@@ -39,13 +39,13 @@ module load R/4.2.1-foss-2022a
 mkdir -p 2_normalised/QC
 
 # run the script to load idats to rgset and calculate QC metrics
-Rscript scripts/calcMouseMethQCmetrics.r
+Rscript scripts/calcMouseMethQCmetrics.r 
 
 # create 1st stage QC report
-Rscript -e "rmarkdown::render('scripts/QC.rmd', output_file='QC.html')"
+Rscript -e "rmarkdown::render('scripts/QC.rmd', output_file='QC.html')" --args /lustre/projects/Research_Project-191406/cellSortedEWAS
 
 # mv markdown report to correct location
-mv scripts/QC.html 2_normalised/QCmetrics
+mv scripts/QC.html 2_normalised/QC
 
 # run cluster cell types script
 Rscript scripts/cellTypeChecks.r
@@ -54,7 +54,7 @@ Rscript scripts/cellTypeChecks.r
 Rscript -e "rmarkdown::render('scripts/cellTypeQC.rmd', output_file='cellTypeQC.html')" 
 
 # mv markdown report to correct location
-mv scripts/cellTypeQC.html 2_normalised/QCmetrics
+mv scripts/cellTypeQC.html 2_normalised/QC
 
 # run normalisation script
 Rscript scripts/normalisation.r

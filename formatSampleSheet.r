@@ -110,4 +110,28 @@ sampleSheet <- sampleSheet %>% rename(Full_Cell_Type = "Cell_Type")
 sampleSheet$Cell_Type <- ifelse(sampleSheet$Full_Cell_Type == "NEUN", "NEUNpos", "NEUNneg")
 
 
+#write.csv(sampleSheet, "0_metadata/sampleSheet.csv", row.names = F)
+
+
+#----------------------------------------------------------------------#
+# add in ELISA (pathology) data
+#----------------------------------------------------------------------#
+
+#sampleSheet <- read.csv("0_metadata/sampleSheet.csv", stringsAsFactors = F)
+
+elisa <- read.csv("0_metadata/AB42ELISAconcentrations.csv", stringsAsFactors = F)
+elisa$Individual_ID <- as.character(elisa$Sample_ID)
+elisa$Pathology <- elisa$Mean_N3
+
+sampleSheet <- left_join(sampleSheet, elisa %>% dplyr::select(Individual_ID, Pathology))
+
+
+#----------------------------------------------------------------------#
+# add in dummy group and interaction term
+#----------------------------------------------------------------------#
+
+sampleSheet$DummyGroup <- ifelse(sampleSheet$Group == "TG", 1, 0)
+sampleSheet$InteractionTerm <- sampleSheet$DummyGroup*sampleSheet$Age
+
+
 write.csv(sampleSheet, "0_metadata/sampleSheet.csv", row.names = F)

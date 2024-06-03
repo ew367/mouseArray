@@ -25,23 +25,22 @@ Updated May 2024
 
 An obejct of class ENmix::rgDataSet was made using the ENmix package and is loaded in alongside the sample sheet containing the pheno data for the mice and QCmetrics object created by the calcMouseMethQCmetrics.r script
 
+
 ```{r, make rgSet,  warning=FALSE, message=FALSE, echo = FALSE}
 
 #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 
-#make rgSet
 
 library(ENmix)
 library(ggplot2)
 library(dplyr)
 library(minfi)
-#library(geneplotter)
-#library(sesame)
-#library(wateRmelon)
 library(gridExtra)
-#library(RColorBrewer)
 
-setwd("/lustre/projects/Research_Project-191406/cellSortedEWAS")
+#args<-commandArgs(trailingOnly = TRUE)
+args<-"/lustre/projects/Research_Project-191406/cellSortedEWAS"
+
+setwd(args[1])
 
 source("config.r")
 
@@ -212,6 +211,25 @@ densityPlot(betas, main = "Passed Samples", sampGroups = QCmetrics$PassQC1)
 
 
 
+# Correlations between QC metrics
+
+```{r, echo = FALSE, fig.width = 10, fig.height = 10}
+
+colsToKeep <- c(c(c("M.median","U.median","BsCon", "pFiltPass", "Cell_Type", "Batch", "DummyGroup",
+                    "Age","Sex", "Pathology"),
+                  colnames(QCmetrics)[grep("PC", colnames(QCmetrics))]))
+
+colsToKeep <- colsToKeep[colsToKeep %in% colnames(QCmetrics)]
+
+corDF <- QCmetrics[,colsToKeep]
+corDF$Cell_Type <- as.numeric(as.factor(corDF$Cell_Type))
+corDF$Batch <- as.numeric(as.factor(corDF$Batch))
+corDF$Sex <- as.numeric(as.factor(corDF$Sex))
+
+
+corrplot(cor(corDF, use = "p"))
+
+```
 
 
 
