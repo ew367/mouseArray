@@ -210,20 +210,31 @@ QCmetrics$sexPass <- ifelse(QCmetrics$PredSex == QCmetrics$Sex, TRUE, FALSE)
 # PCA OF BETAS
 #----------------------------------------------------------------------#
 
+
+if(file.exists(file = file.path(QCDir, "PCAbetas.rdat"))){
+  print("Loading PCA betas object")
+  load(file = file.path(QCDir, "PCAbetas.rdat"))
+  
+} else{
 # filter to autosomal probes and passed intens check samples only
-auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
-rawbetas <- getB(mraw)
-rawbetas<-rawbetas[row.names(rawbetas) %in% auto.probes,QCmetrics$IntensityPass]
+  auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
+  rawbetas <- getB(mraw)
+  rawbetas<-rawbetas[row.names(rawbetas) %in% auto.probes, QCmetrics$IntensityPass]
 
 #run PCA  
-pca <- prcomp(t(na.omit(rawbetas)))
-betas.scores = pca$x
-colnames(betas.scores) = paste(colnames(betas.scores), '_betas', sep='')
-betas.pca<-pca$sdev^2/sum(pca$sdev^2)
-betas.scores<-betas.scores[match(QCmetrics$Basename, QCmetrics$Basename[QCmetrics$IntensityPass]),]
-rownames(betas.scores)<-QCmetrics$Basename	
+  pca <- prcomp(t(na.omit(rawbetas)))
+  save(pca, file = file.path(QCDir, "PCAbetas.rdat"))
+  
+  betas.scores = pca$x
+  colnames(betas.scores) = paste(colnames(betas.scores), '_betas', sep='')
+  
+  betas.pca<-pca$sdev^2/sum(pca$sdev^2)
+  betas.scores<-betas.scores[match(QCmetrics$Basename, QCmetrics$Basename[QCmetrics$IntensityPass]),]
+  rownames(betas.scores)<-QCmetrics$Basename	
 # only save PCs which explain > 1% of the variance
-QCmetrics<-cbind(QCmetrics,betas.scores[,which(betas.pca > 0.01)])
+  QCmetrics<-cbind(QCmetrics,betas.scores[,which(betas.pca > 0.01)])
+
+}
 
 
 
