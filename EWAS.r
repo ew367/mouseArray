@@ -56,15 +56,23 @@ library(dplyr)
 
 runEWAS<-function(row,QCmetrics){
   
-  modelLM<-lm(row ~ QCmetrics$Phenotype + QCmetrics$Cell.Proportions + QCmetrics$CCDNAmAge + QCmetrics$Sex + QCmetrics$Tissue.Centre)
-  nullCT<-lm(row ~ QCmetrics$Phenotype +  QCmetrics$CCDNAmAge + QCmetrics$Sex + QCmetrics$Tissue.Centre)
+  nullLM<-lm(row ~ QCmetrics$Group + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch)
+  
+  interactionLM<-lm(row ~ QCmetrics$Group + QCmetrics$Age*QCmetrics$Group + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch)
+  
   
   # extract case control main effect and cell proportion effect
-  return(c(summary(modelLM)$coefficients["QCmetrics$PhenotypeSchizophrenia",c(1,2,4)],
-           summary(modelLM)$coefficients["QCmetrics$Cell.Proportions",c(1,2,4)],
+  return(c(summary(interactionLM)$coefficients["QCmetrics$GroupWT",c(1,2,4)],
+           summary(interactionLM)$coefficients["QCmetrics$Age",c(1,2,4)],
+           summary(interactionLM)$coefficients["QCmetrics$SexM",c(1,2,4)],
+           summary(interactionLM)$coefficients["QCmetrics$GroupWT:QCmetrics$Age",c(1,2,4)],
+           
            
            # extract cell specific case control effect
-           summary(nullCT)$coefficients["QCmetrics$PhenotypeSchizophrenia",c(1,2,4)]))
+           summary(nullLM)$coefficients["QCmetrics$GroupWT",c(1,2,4)],
+           summary(nullLM)$coefficients["QCmetrics$Age",c(1,2,4)],
+           summary(nullLM)$coefficients["QCmetrics$SexM",c(1,2,4)]))
+  
 }
 
 
@@ -80,28 +88,25 @@ library(doParallel)
 #----------------------------------------------------------------------#
 
 args<-commandArgs(trailingOnly = TRUE)
-#dataDir <- args[1]
-#cellType <- args[2]
-cellType <- "NEUNpos"
+projDir <- args[1]
+#projDir <- "/lustre/projects/Research_Project-191406/cellSortedEWAS"
+cellType <- args[2]
+#cellType <- "NEUNpos"
 
 
-normData<-file.path(dataDir, "2_normalised/normalisedData.rdat")
+normData<-file.path(projDir, "2_normalised/normalisedData.rdat")
 
 #----------------------------------------------------------------------#
 # LOAD AND PREPARE DATA
 #----------------------------------------------------------------------#
 
-setwd(dataDir)
+setwd(projDir)
 load(normData)
-elisa <- read.csv("0_metadata/AB42ELISAconcentrations.csv", stringsAsFactors = F) # pathology data
 
 
-# add in pathology data
-elisa$Individual_ID <- as.character(elisa$Sample_ID)
-elisa$Pathology <- elisa$Mean_N3
-
-QCmetrics <- left_join(QCmetrics, elisa %>% dplyr::select(Individual_ID, Pathology))
 QCmetrics$Group <- as.factor(QCmetrics$Group)
+QCmetrics$Sex <- as.factor(QCmetrics$Sex)
+QCmetrics$Batch <- as.factor(QCmetrics$Batch)
 
 print(paste0("running EWAS on ", cellType, " cell type..."))
 ## subset to cell type samples
@@ -112,8 +117,8 @@ QCmetrics<-QCmetrics[which(QCmetrics$Cell_Type == cellType),]
 celltypeNormbeta<-celltypeNormbeta[,QCmetrics$Basename]
 
 # take top 100 rows for debugging
-betasSub <- celltypeNormbeta[1:100,]
-meanBetas <- colMeans(celltypeNormbeta)
+#betasSub <- celltypeNormbeta[1:100,]
+#row <- colMeans(celltypeNormbeta)
 
 #----------------------------------------------------------------------#
 # INTITATE PARALLEL ENV
@@ -125,14 +130,19 @@ registerDoParallel(cl)
 clusterExport(cl, list("runEWAS"))
 
 outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 9, byrow = TRUE)
-#outtab<-matrix(data = parRapply(cl, betasSub, runEWAS, QCmetrics), ncol = 9, byrow = TRUE)
+#outtab<-matrix(data = parRapply(cl, betasSub, runEWAS, QCmetrics), ncol = 21, byrow = TRUE)
 
 
 rownames(outtab)<-rownames(celltypeNormbeta)
 #rownames(outtab)<-rownames(betasSub)
-colnames(outtab)<-c("SCZ_coeff", "SCZ_SE", "SCZ_P", 
-                    paste0(cellType,"_coeff"), paste0(cellType,"_SE"), paste0(cellType,"_P"),
-                    "nullCT_SCZ_coeff", "nullCT_SCZ_SE", "nullCT_SCZ_P") 
+colnames(outtab)<-c("GroupWT_coeff", "GroupWT_SE", "GroupWT_P", 
+                    "Age_coeff", "Age_SE", "Age_P",
+                    "SexM_coeff", "SexM_SE", "SexM_P",
+                    "GroupWT:QCmetrics$Age_coeff", "GroupWT:QCmetrics$SE", "GroupWT:QCmetrics$Age_P",
+                    
+                    "nullGroupWT_coeff", "nullGroupWT_SE", "nullGroupWT_P", 
+                    "nullAge_coeff", "nullAge_SE", "nullAge_P",
+                    "nullSexM_coeff", "nullSexM_SE", "nullSexM_P") 
 
 
-save(outtab, file = file.path(paste0(resPath, cellType,"LM.rdata")))
+save(outtab, file = "3_analysis/results/EWASout.rdat")
