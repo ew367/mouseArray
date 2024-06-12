@@ -1,6 +1,6 @@
 
 # filepaths
-projDir <- "full/Filepath/To/ProjectDirectory/Here"
+projDir <- "/lustre/projects/Research_Project-191406/cellSortedEWAS"
 pheno <- file.path(projDir, "0_metadata/sampleSheet.csv")
 manifest <- file.path(projDir, "0_metadata/MouseMethylation-12v1-0_A2.csv")
 idatPath <- file.path(projDir, "1_raw/")

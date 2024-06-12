@@ -262,6 +262,8 @@ QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
 save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
 write.csv(QCSum, file.path(QCDir, "passQCStatusStage1AllSamples.csv"), row.names = F)
 
+print("QC objects created and saved")
+
 #save(rgSetPass, file=file.path(QCDir, "rgSetPass.rdat"))
 
 

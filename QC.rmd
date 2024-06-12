@@ -36,6 +36,7 @@ library(ggplot2)
 library(dplyr)
 library(minfi)
 library(gridExtra)
+library(corrplot)
 
 #args<-commandArgs(trailingOnly = TRUE)
 args<-"/lustre/projects/Research_Project-191406/cellSortedEWAS"

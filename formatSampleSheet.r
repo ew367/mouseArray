@@ -135,3 +135,18 @@ sampleSheet$InteractionTerm <- sampleSheet$DummyGroup*sampleSheet$Age
 
 
 write.csv(sampleSheet, "0_metadata/sampleSheet.csv", row.names = F)
+
+
+
+#----------------------------------------------------------------------#
+# create version without PU1
+#----------------------------------------------------------------------#
+
+# manually renamed sample sheet
+
+sampleSheet <- read.csv("0_metadata/sampleSheetAll3CellTypesButPosNegdifferentitation.csv", stringsAsFactors = F)
+
+sampleSheet <- sampleSheet[!is.na(sampleSheet$Cell_Type),]
+sampleSheet <- sampleSheet[sampleSheet$Full_Cell_Type != "PU1",]
+
+write.csv(sampleSheet, "0_metadata/sampleSheet.csv", row.names = F)
