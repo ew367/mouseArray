@@ -129,8 +129,8 @@ cl <- makeCluster(nCores-1)
 registerDoParallel(cl)
 clusterExport(cl, list("runEWAS"))
 
-outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 9, byrow = TRUE)
-#outtab<-matrix(data = parRapply(cl, betasSub, runEWAS, QCmetrics), ncol = 21, byrow = TRUE)
+
+outtab<-matrix(data = parRapply(cl, betasSub, runEWAS, QCmetrics), ncol = 21, byrow = TRUE)
 
 
 rownames(outtab)<-rownames(celltypeNormbeta)
