@@ -63,7 +63,10 @@ runEWAS<-function(row,QCmetrics){
            # extract cell specific case control effect
            summary(nullLM)$coefficients["QCmetrics$GroupWT",c(1,2,4)],
            summary(nullLM)$coefficients["QCmetrics$Age",c(1,2,4)],
-           summary(nullLM)$coefficients["QCmetrics$SexM",c(1,2,4)]))
+           summary(nullLM)$coefficients["QCmetrics$SexM",c(1,2,4)],
+           
+           # run anova
+           anova(interactionLM, nullLM)[2,"Pr(>F)"]))
   
 }
 
@@ -121,7 +124,7 @@ cl <- makeCluster(nCores-1)
 registerDoParallel(cl)
 clusterExport(cl, list("runEWAS"))
 
-outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 21, byrow = TRUE)
+outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 22, byrow = TRUE)
 
 
 rownames(outtab)<-rownames(celltypeNormbeta)
@@ -133,10 +136,12 @@ colnames(outtab)<-c("GroupWT_coeff", "GroupWT_SE", "GroupWT_P",
                     
                     "nullGroupWT_coeff", "nullGroupWT_SE", "nullGroupWT_P", 
                     "nullAge_coeff", "nullAge_SE", "nullAge_P",
-                    "nullSexM_coeff", "nullSexM_SE", "nullSexM_P") 
+                    "nullSexM_coeff", "nullSexM_SE", "nullSexM_P",
+                    
+                    "anovoP") 
 
-
-save(outtab, file = "3_analysis/results/EWASout.rdat")
+filePath <- paste0("3_analysis/results/", cellType, "EWASout.rdat")
+save(outtab, file = filePath)
 
 
 
