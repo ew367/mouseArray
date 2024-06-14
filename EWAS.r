@@ -26,14 +26,6 @@
 
 
 
-# NeuN- models- need to include individual as random effect
-
-#lmer(DNAm ~ QCmetrics$Group + QCmetrics$Pathology + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch (1|pheno$Individual_ID), REML = FALSE)
-
-
-#lmer(DNAm ~ QCmetrics$Group + QCmetrics$Age*QCmetrics$Group + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch (1|pheno$Individual_ID), REML = FALSE)
-
-
 # include null models of each with anova to test that pathology/interaction term is improving the model fit
 
 
@@ -129,8 +121,7 @@ cl <- makeCluster(nCores-1)
 registerDoParallel(cl)
 clusterExport(cl, list("runEWAS"))
 
-
-outtab<-matrix(data = parRapply(cl, betasSub, runEWAS, QCmetrics), ncol = 21, byrow = TRUE)
+outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 21, byrow = TRUE)
 
 
 rownames(outtab)<-rownames(celltypeNormbeta)
@@ -146,3 +137,21 @@ colnames(outtab)<-c("GroupWT_coeff", "GroupWT_SE", "GroupWT_P",
 
 
 save(outtab, file = "3_analysis/results/EWASout.rdat")
+
+
+
+#----------------------------------------------------------------------#
+# Explore results
+#----------------------------------------------------------------------#
+
+
+bonfP <- 0.05/nrow(outtab)
+
+# for each col, how many resultsa are lower than bonfP
+
+countSig <- function(x){
+  sig <- sum(x < bonfP)
+  return(sig)
+}
+
+apply(outtab[,1:21], 2, countSig) 
