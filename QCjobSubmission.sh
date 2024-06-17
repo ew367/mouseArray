@@ -15,7 +15,7 @@
 
 # 1. command line argument input is your project folder.
 
-# e.g. to run sbatch jobSubmission.sh <filepath/to/projectFolder>
+# e.g. to run sbatch QCjobSubmission.sh <filepath/to/projectFolder>
 
 #-----------------------------------------------------
 
@@ -42,7 +42,7 @@ mkdir -p 2_normalised/QC
 Rscript scripts/calcMouseMethQCmetrics.r 
 
 # create 1st stage QC report
-Rscript -e "rmarkdown::render('scripts/QC.rmd', output_file='QC.html')" --args /lustre/projects/Research_Project-191406/cellSortedEWAS
+Rscript -e "rmarkdown::render('scripts/QC.rmd', output_file='QC.html')" --args $1
 
 # mv markdown report to correct location
 mv scripts/QC.html 2_normalised/QC
