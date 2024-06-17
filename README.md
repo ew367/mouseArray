@@ -53,7 +53,7 @@ sbatch EWASjobSubmission.sh <filepath/to/projectFolder> cellType
 
 
 This script will execute:
-*EWAS.r $1 $2
+* EWAS.r $1 $2
 
 
 
