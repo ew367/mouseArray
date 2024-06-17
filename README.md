@@ -21,9 +21,22 @@ PREQUISITES:
 * idats in the 1_raw folder
 
 
+
+QUALITY CONTROL STAGE
+
 OUTPUT: 
 * Quality control objects, metrics and html reports are located in 2_normalised/QCmetrics
 
+
+The QCjobSubmission.sh script automates the quality control pipeline and can be run on the command line with:
+sbatch QCjobSubmission.sh <filepath/to/projectFolder>
+
+This script will execute:
+calcMouseMethQCmetrics.r
+Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
+cellTypeChecks.r
+Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" 
+normalisation.r
 
 
 
