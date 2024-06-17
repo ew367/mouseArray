@@ -159,4 +159,4 @@ countSig <- function(x){
   return(sig)
 }
 
-apply(outtab[,1:21], 2, countSig) 
+apply(outtab[,1:22], 2, countSig) 
