@@ -8,11 +8,11 @@ This repository contains analysis pipelines for the pre-processing and analysis 
 
 PREQUISITES: 
 * A project folder containing the following sub directories:
-  0_metadata
-  1_raw
-  2_normalised
-  3_analysis
-  logFiles
+  * 0_metadata
+  * 1_raw
+  * 2_normalised
+  * 3_analysis
+  * logFiles
   
 * A config file in the project folder containing file paths and thresholds etc specific to their project (see exampleData/config.r for an example)
 
@@ -33,19 +33,19 @@ The QCjobSubmission.sh script automates the quality control pipeline and can be 
 sbatch QCjobSubmission.sh <filepath/to/projectFolder>
 
 This script will execute:
-*calcMouseMethQCmetrics.r
-*Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
-*cellTypeChecks.r
-*Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" 
-*normalisation.r
+* calcMouseMethQCmetrics.r
+* Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
+* cellTypeChecks.r
+* Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" 
+* normalisation.r
 
 
 
 # ANALYIS
 
 OUTPUT:
-*rdata files for Epigenome Wide Association Analysis for each each cell type of interest
-*plots 
+* rdata files for Epigenome Wide Association Analysis for each each cell type of interest
+* plots 
 
 
 The EWASjobSubmission.sh script automates the EWAS pipeline and can be run on the command line with:
