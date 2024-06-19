@@ -1,0 +1,22 @@
+## Run BLAT on mouse probe sequences against human genome ##
+
+col=AlleleA_ProbeSeq
+
+query=allProbeSeqs_${col}_fasta4.fa
+out=allProbeSeqs_${col}.psl
+
+
+genome=/lustre/projects/Research_Project-MRC190311/references/grch38/ncbi/Homo_sapiens/NCBI/GRCh38/Sequence/WholeGenomeFasta/genome.fa
+
+cd /lustre/projects/Research_Project-191406/cellSortedEWAS/0_metadata/
+
+/lustre/projects/Research_Project-MRC190311/software/blat $genome $query $out
+
+# Source Seq
+# Loaded 3099922541 letters in 195 sequences
+# Searched 14352500 bases in 287050 sequences
+
+
+# AlleleA_ProbeSeq
+# Loaded 3099922541 letters in 195 sequences
+# Searched 14356143 bases in 287692 sequences
