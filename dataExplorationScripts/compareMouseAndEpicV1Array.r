@@ -10,6 +10,11 @@
 ##
 ##---------------------------------------------------------------------#
 
+#----------------------------------------------------------------------#
+# Notes
+#----------------------------------------------------------------------#
+
+# https://bioinformatics.stackexchange.com/questions/225/uppercase-vs-lowercase-letters-in-reference-genome
 
 #----------------------------------------------------------------------#
 # Import Data
@@ -29,7 +34,7 @@ hsManifest <- fread("/lustre/projects/Research_Project-MRC190311/references/EPIC
 
 
 #----------------------------------------------------------------------#
-# Compare AlleleA probe sequences
+# Compare mouse/human AlleleA probe sequences
 #----------------------------------------------------------------------#
 
 AlleleA_seq <- intersect(mmManifest$AlleleA_ProbeSeq, hsManifest$AlleleA_ProbeSeq)
@@ -51,7 +56,7 @@ allAseq <- left_join(allAseq, mmGene %>% dplyr::select(MouseName, Gene))  # just
 
 
 #----------------------------------------------------------------------#
-# Compare AlleleB probe sequences
+# Compare mouse/human AlleleB probe sequences
 #----------------------------------------------------------------------#
 
 # find sequences that match in mouse and epic
@@ -62,12 +67,15 @@ nrow(mmManifest[mmManifest$AlleleB_ProbeSeq %in% AlleleB_seq[-1],]) # remove "" 
 
 # create object for mouse and human data with the name, probe seq, gene info
 
-mmBseq <- mmManifest[mmManifest$AlleleB_ProbeSeq %in% AlleleB_seq[-1], c("Name", "AlleleB_ProbeSeq")]
+mmBseq <- mmManifest[mmManifest$AlleleB_ProbeSeq %in% AlleleB_seq[-1], c("Name", "AlleleB_ProbeSeq", "SourceSeq")]
 colnames(mmBseq)[1] <- "MouseName"
+colnames(mmBseq)[3] <- "MouseSourceSeq"
 mmBseq <- mmBseq[order(mmBseq$AlleleB_ProbeSeq),]
 
-hsBseq <- hsManifest[hsManifest$AlleleB_ProbeSeq %in% AlleleB_seq[-1], c("Name", "AlleleB_ProbeSeq", "UCSC_RefGene_Name")]
+hsBseq <- hsManifest[hsManifest$AlleleB_ProbeSeq %in% AlleleB_seq[-1], c("Name", "AlleleB_ProbeSeq", "UCSC_RefGene_Name", "SourceSeq")]
 colnames(hsBseq)[1] <- "EpicName"
+colnames(hsBseq)[4] <- "SourceSeq"
+
 hsBseq <- hsBseq[order(hsBseq$AlleleB_ProbeSeq),]
   
 
@@ -75,4 +83,27 @@ allBseq <- left_join(mmBseq, hsBseq)
 allBseq <- left_join(allBseq, mmGene %>% dplyr::select(MouseName, Gene))  # just take 1st row/genename
   
 
+
+#----------------------------------------------------------------------#
+# Compare mouse/human sourceSeq
+#----------------------------------------------------------------------#
+
+sourSeq <- intersect(toupper(mmManifest$SourceSeq), hsManifest$SourceSeq)
+
+# mouse seq is in mix up upper and lower case (dom/rec alleles?)
+# still no matches after converting to upper
+# https://bioinformatics.stackexchange.com/questions/225/uppercase-vs-lowercase-letters-in-reference-genome 
+
+
+#----------------------------------------------------------------------#
+# Compare mouse AlleleA/AlleleB probe sequences
+#----------------------------------------------------------------------#
+
+intersect(mmManifest$AlleleA_ProbeSeq, mmManifest$AlleleB_ProbeSeq) #0 
+
+intersect(hsManifest$AlleleA_ProbeSeq, mmManifest$AlleleB_ProbeSeq) #0
+
+intersect(hsManifest$AlleleA_ProbeSeq, hsManifest$AlleleB_ProbeSeq) #0
+
+intersect(hsManifest$AlleleB_ProbeSeq, mmManifest$AlleleA_ProbeSeq) # 0
 
