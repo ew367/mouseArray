@@ -19,13 +19,9 @@
 
 # within cell type models
 
-# pathology: lm(DNAm ~ QCmetrics$Group + QCmetrics$Pathology + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch
+# null model to check gorup term improves the model
 
-
-# group*age: DNAm ~ QCmetrics$Group + QCmetrics$Age*QCmetrics$Group + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch
-
-
-# include null models of each with anova to test that pathology/interaction term is improving the model fit
+# excluded age (Jon's advice)
 
 
 
@@ -47,25 +43,20 @@ library(dplyr)
 
 runEWAS<-function(row,QCmetrics){
   
-  nullLM<-lm(row ~ QCmetrics$Group + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch)
+  nullLM<-lm(row ~ QCmetrics$Sex + QCmetrics$Batch)
   
-  interactionLM<-lm(row ~ QCmetrics$Group + QCmetrics$Age*QCmetrics$Group + QCmetrics$Age + QCmetrics$Sex + QCmetrics$Batch)
+  fullLM<-lm(row ~ QCmetrics$Group + QCmetrics$Sex + QCmetrics$Batch)
   
   
-  # extract case control main effect and cell proportion effect
-  return(c(summary(interactionLM)$coefficients["QCmetrics$GroupWT",c(1,2,4)],
-           summary(interactionLM)$coefficients["QCmetrics$Age",c(1,2,4)],
-           summary(interactionLM)$coefficients["QCmetrics$SexM",c(1,2,4)],
-           summary(interactionLM)$coefficients["QCmetrics$GroupWT:QCmetrics$Age",c(1,2,4)],
+  # extract case control main effect and sex effect
+  return(c(summary(fullLM)$coefficients["QCmetrics$GroupWT",c(1,2,4)],
+           summary(fullLM)$coefficients["QCmetrics$SexM",c(1,2,4)],
            
-           
-           # extract cell specific case control effect
-           summary(nullLM)$coefficients["QCmetrics$GroupWT",c(1,2,4)],
-           summary(nullLM)$coefficients["QCmetrics$Age",c(1,2,4)],
+           # extract sex effect
            summary(nullLM)$coefficients["QCmetrics$SexM",c(1,2,4)],
            
            # run anova
-           anova(interactionLM, nullLM)[2,"Pr(>F)"]))
+           anova(fullLM, nullLM)[2,"Pr(>F)"]))
   
 }
 
@@ -123,23 +114,19 @@ cl <- makeCluster(nCores-1)
 registerDoParallel(cl)
 clusterExport(cl, list("runEWAS"))
 
-outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 22, byrow = TRUE)
+outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol = 10, byrow = TRUE)
 
 
 rownames(outtab)<-rownames(celltypeNormbeta)
 #rownames(outtab)<-rownames(betasSub)
 colnames(outtab)<-c("GroupWT_coeff", "GroupWT_SE", "GroupWT_P", 
-                    "Age_coeff", "Age_SE", "Age_P",
                     "SexM_coeff", "SexM_SE", "SexM_P",
-                    "GroupWT:QCmetrics$Age_coeff", "GroupWT:QCmetrics$SE", "GroupWT:QCmetrics$Age_P",
-                    
-                    "nullGroupWT_coeff", "nullGroupWT_SE", "nullGroupWT_P", 
-                    "nullAge_coeff", "nullAge_SE", "nullAge_P",
+                
                     "nullSexM_coeff", "nullSexM_SE", "nullSexM_P",
                     
                     "anovoP") 
 
-filePath <- paste0("3_analysis/results/", cellType, "EWASout.rdat")
+filePath <- paste0("3_analysis/results/", cellType, "EWASnoAgeout.rdat")
 save(outtab, file = filePath)
 
 
@@ -158,4 +145,4 @@ countSig <- function(x){
   return(sig)
 }
 
-apply(outtab[,1:22], 2, countSig) 
+apply(outtab[,1:10], 2, countSig) 
