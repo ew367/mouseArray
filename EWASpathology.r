@@ -119,14 +119,14 @@ outtab<-matrix(data = parRapply(cl, celltypeNormbeta, runEWAS, QCmetrics), ncol 
 
 rownames(outtab)<-rownames(celltypeNormbeta)
 #rownames(outtab)<-rownames(betasSub)
-colnames(outtab)<-c("GroupWT_coeff", "GroupWT_SE", "GroupWT_P", 
+colnames(outtab)<-c("Pathology_coeff", "Pathology_SE", "Pathology_P", 
                     "SexM_coeff", "SexM_SE", "SexM_P",
                 
                     "nullSexM_coeff", "nullSexM_SE", "nullSexM_P",
                     
                     "anovoP") 
 
-filePath <- paste0("3_analysis/results/", cellType, "EWASpathOut.rdat")
+filePath <- paste0("3_analysis/results/", cellType, "EWASpathout.rdat")
 save(outtab, file = filePath)
 
 
@@ -146,3 +146,10 @@ countSig <- function(x){
 }
 
 apply(outtab[,1:10], 2, countSig) 
+
+
+# top 20
+
+outtab <- as.data.frame(outtab)
+outtab[order(outtab$Pathology_P),][1:20,]
+

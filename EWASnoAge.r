@@ -135,6 +135,7 @@ save(outtab, file = filePath)
 # Explore results
 #----------------------------------------------------------------------#
 
+# bonferroni significance
 
 bonfP <- 0.05/nrow(outtab)
 
@@ -146,3 +147,9 @@ countSig <- function(x){
 }
 
 apply(outtab[,1:10], 2, countSig) 
+
+
+# top 20
+
+outtab <- as.data.frame(outtab)
+outtab[order(outtab$GroupWT_P),][1:20,]
