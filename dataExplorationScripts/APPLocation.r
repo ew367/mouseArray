@@ -14,6 +14,9 @@
 # There are 43 probes in the App gene
 # 40 in this dataset after QC
 
+# https://www.nature.com/articles/nn.3697#Sec1
+# this paper explains where the mutations are
+
 
 #----------------------------------------------------------------------#
 # LOAD PACKAGES etc
@@ -52,6 +55,7 @@ geneMan <- fread(geneInfo, fill=TRUE, data.table=F)
 #----------------------------------------------------------------------#
 
 appCPGs <- man$IlmnID[which(man$CHR == 16 & man$MAPINFO > appStart - window & man$MAPINFO < appEnd + window)]
+mutCPGs <- man$IlmnID[which(man$CHR == 16 & man$MAPINFO > (appStart + 206484)-window & man$MAPINFO < appEnd + window)]
 
 
 #----------------------------------------------------------------------#
@@ -73,7 +77,7 @@ celltypeNormbeta<-celltypeNormbeta[,QCmetrics$Basename]
 #subset to app gene probes only
 # note there are 3 probes in app which are not in the QC'd dataset
 appBetas <- celltypeNormbeta[rownames(celltypeNormbeta) %in% appCPGs,]
-
+mutBetas <- celltypeNormbeta[rownames(celltypeNormbeta) %in% mutCPGs,]
 
 #----------------------------------------------------------------------#
 # PLOT
@@ -100,11 +104,56 @@ pdf(outFile)
 P <- ggplot(plotdf, aes(x=MAPINFO, y=Methylation, color=Group)) +
   geom_point()+
   geom_smooth() +
- ggtitle(paste0(cellType, " - CpGs in App gene"))
+ ggtitle(paste0(cellType, " - CpGs in App gene"))+
+  geom_vline(xintercept = appStart+206484)+
+  geom_vline(xintercept = appStart+207984)+
+  geom_vline(xintercept = appStart+210922)+
+  geom_vline(xintercept = appStart+216617)
+  
+  
+  
 
 print(P)
 
 dev.off()
+
+
+
+
+
+#### zoomed in on mutation region
+
+
+# create plot object
+
+
+
+plotdf <- cbind(t(mutBetas), QCmetrics %>% dplyr::select(Group))
+plotdf <- reshape2::melt(plotdf)
+colnames(plotdf)[2:3] <- c("IlmnID", "Methylation")
+plotdf <- left_join(plotdf, mapinfo)
+
+
+#plot!
+
+outFile <- paste0("3_analysis/plots/", cellType, "MutGeneCpGs.pdf")
+
+pdf(outFile)
+P <- ggplot(plotdf, aes(x=MAPINFO, y=Methylation, color=Group)) +
+  geom_point()+
+  geom_smooth() +
+  ggtitle(paste0(cellType, " - CpGs in mutation region of App gene"))+
+  geom_vline(xintercept = appStart+206484)+
+  geom_vline(xintercept = appStart+207984)+
+  geom_vline(xintercept = appStart+210922)+
+  geom_vline(xintercept = appStart+216617)+
+  ylim(0, 0.8)
+
+
+print(P)
+
+dev.off()
+
 
 
 
