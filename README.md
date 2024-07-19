@@ -19,7 +19,7 @@ PREQUISITES:
 * A file named sampleSheet.csv in the 0_metadata folder which contains the following columns, and any other associated phenotype data:
     "Basename","Chip_ID","Chip_Position","Plate","Batch", "Individual_ID","Sample_ID","Cell_Type","N_Nuclei","Group","Age","Sex". (see exampleData/sampleSheet.csv)
     
-* idats in the 1_raw folder
+* raw idat files in the 1_raw folder
 
 
 
