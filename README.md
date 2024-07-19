@@ -1,6 +1,8 @@
-# cellSortedEWAS
-QC and analysis of cell sorted mouse methylation array data
-
+# mouseArray
+QC and analysis of cell sorted methylation array data run on the Ilumina Infinium Mouse Methylation BeadChip \
+(https://emea.illumina.com/products/by-type/microarray-kits/infinium-mouse-methylation.html)
+\
+\
 This repository contains analysis pipelines for the pre-processing and analysis of the data generated as part of this project. They are developed for use with a HPC system with the SLURM job scheduler.
 
 
