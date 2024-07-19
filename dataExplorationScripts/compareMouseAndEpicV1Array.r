@@ -28,7 +28,6 @@ mmGene <- fread("/lustre/projects/Research_Project-191406/cellSortedEWAS/0_metad
 colnames(mmGene)[1] <- "MouseName"
 mmGene <- mmGene[!duplicated(mmGene$MouseName), c("MouseName", "Gene")]
 
-
 hsManifest <- fread("/lustre/projects/Research_Project-MRC190311/references/EPICArray/MethylationEPIC_v-1-0_B5.csv", skip=7, fill=TRUE, data.table=F)
 
 

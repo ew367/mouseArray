@@ -20,7 +20,8 @@
 
 
 # https://zwdzwd.github.io/InfiniumAnnotation#mouse this contains a file called "Mouse array design groups (MM285)"
-# which shows the overlap
+
+#  col (2) design: contains the annotation of the probes. For the syntenic EPIC probe mapping, search for EPIC prefix in the design column. 
 
 #   Probe_ID        design                    
 #1 cg00101675_BC21 EPIC;cg00101675           
@@ -30,35 +31,85 @@
 #5 cg00747726_TC21 EPIC;cg00747726           
 #6 cg00896209_TC21 CGI;chr3:89169426-89169681
 
+
+# the cg IDs don't appear to have suffixes so it looks to be matched
+# to epicv1 data only
+
 #----------------------------------------------------------------------#
 # IMPORT DATA
 #----------------------------------------------------------------------#
 
-library(CETYGO)
 library(readr)
+library(dplyr)
+library(data.table)
 
 source("config.r")
 
-#read in manifest and create probe ID with no suffix
+#read in mouse manifest and create probe ID with no suffix
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 man$probeID <- gsub("_.*$", "", man$IlmnID)
 
-designMan <- as.data.frame(read_tsv("0_metadata/MM285.design.tsv"))
+
+# read in gene annotation manifest
+geneMan <- fread(geneInfo, fill=TRUE, data.table=F)
+
+
+
+# read in gene anno file
+designMan <- as.data.frame(readr::read_tsv("0_metadata/MM285.design.tsv"))
+
+
+# read in human manifest
+hsManifest <- fread("/lustre/projects/Research_Project-MRC190311/references/EPICArray/MethylationEPIC_v-1-0_B5.csv", skip=7, fill=TRUE, data.table=F)
+
+
+
+#----------------------------------------------------------------------#
+# CREATE NEW MOUSE MANIFEST
+#----------------------------------------------------------------------#
+
+# add col to manifest for gene info
+#gene <- c()
+#for(i in man$Name){
+#  gene <- c(gene, toString(unique(geneMan[geneMan$name == substr(i, 1,10), "Gene"]##)))
+#}
+
+#man$gene <- gene
+
+#write.csv(man, "0_metadata/mm10manifestWithGeneInfo.csv")
+
+
+#----------------------------------------------------------------------#
+  # CREATE NEW EPIC MATCHED MANIFEST
+#----------------------------------------------------------------------#
+
+
+# create col with matched epic probe ID
+
 epicMatched <- designMan[grep("EPIC", designMan$design),]
-
-epicIDsinMouse <- #
-  ### need to use regexp to extract cg and following 8 digits
+epicMatched$epicProbeID <- substr(epicMatched$design, 6, 15)
 
 
-#----------------------------------------------------------------------#
-# EPIC V1 AND MOUSE ARRAY PROVE OVERLAP
-#----------------------------------------------------------------------#
+# create col with mouse gene
+
+gene <- c()
+for(i in epicMatched$Probe_ID){
+  gene <- c(gene, toString(unique(geneMan[geneMan$name == substr(i, 1,10), "Gene"])))
+}
+
+epicMatched$mouseGene <- gene
 
 
-load("pathToMRCNormalisedData/normalised.rdata")
+# create col with human gene
 
-inBoth <- intersect(row.names(celltypeNormbeta), man$probeID) # 141 probes
+humanGene <- hsManifest[hsManifest$IlmnID %in% epicMatched$epicProbeID, c("Name", "UCSC_RefGene_Name")]
+colnames(humanGene) <- c("epicProbeID", "humanGene")
 
-man[man$probeID %in% inBoth,]
+epicMatched <- left_join(epicMatched, humanGene)
+
+
+write.csv(epicMatched, "0_metadata/epicMatchedManifest.csv")
+
+
 
                     
