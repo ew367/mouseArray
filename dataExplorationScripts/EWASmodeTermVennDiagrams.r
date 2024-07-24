@@ -4,7 +4,7 @@
 ##        term from the null model
 ##
 ## Purpose of script: plot Venn diagram
-##                    correlate effect sizes of DMPs in both
+##                    correlate effect sizes of DMPs
 ##                    
 ##                 
 ##
@@ -16,16 +16,15 @@
 # NOTES
 #----------------------------------------------------------------------#
 
-# compare pathology DMPs and Age DMPs
 
 #----------------------------------------------------------------------#
-# LOAD PACKAGES etc
+# LOAD PACKAGES AND IMPORT DATA
 #----------------------------------------------------------------------#
 
 library(VennDiagram)
 library(dplyr)
 
-cellType <- "NEUNneg"
+cellType <- "NEUNneg" # no sig pathology model results for neun+
 
 load(paste0("3_analysis/results/", cellType,"EWASpathout.rdat"))
 pathRes <- as.data.frame(outtab)
@@ -50,7 +49,7 @@ nneg$probe <- row.names(nneg)
 #----------------------------------------------------------------------#
 
 ageDmps <- row.names(nullRes %>% filter(nullAge_P < 0.05/nrow(nullRes)))
-pathDmps <- row.names(pathRes %>% filter(Pathology_P < 0.05/nrow(pathRes))) # n.b. none for neun+
+pathDmps <- row.names(pathRes %>% filter(Pathology_P < 0.05/nrow(pathRes)))
 overlap <- intersect(ageDmps, pathDmps) # in both
 
 
