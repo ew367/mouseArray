@@ -50,7 +50,7 @@ if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
   print("Loading rgSet")
   load(file = file.path(QCDir, "rgSet.rdat"))
 } else{
-  rgSet <- readidat(path = idatPath ,manifestfile=manifest ,recursive = TRUE)
+  rgSet <- readidat(path = idatPath ,manifestfile=man ,recursive = TRUE)
   save(rgSet, file=file.path(QCDir, "rgSet.rdat"))
   print("rgSet created and saved")
 }
