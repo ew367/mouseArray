@@ -56,9 +56,11 @@ if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
 }
 
 
-# Exclude empty wells
-sampleSheet <- sampleSheet[!sampleSheet$Basename %in% empty,]
-rgSet <- rgSet[,sampleSheet$Basename]
+# Exclude empty wells if defined in sampleSheet
+if(exists(empty)){
+  sampleSheet <- sampleSheet[!sampleSheet$Basename %in% empty,]
+  rgSet <- rgSet[,sampleSheet$Basename]
+}
 
 
 #----------------------------------------------------------------------#
