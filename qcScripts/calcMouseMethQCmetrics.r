@@ -18,8 +18,6 @@
 # file in the project folder
 
 
-# MAY BE GOOD TO INCLUDE SESAME PROBE MASKING HERE TOO???? - in normalisation script
-
 #----------------------------------------------------------------------#
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
@@ -28,7 +26,6 @@ print("loading packages...")
 library(ENmix)
 library(SummarizedExperiment)
 library(dplyr)
-library(plotrix)
 library(stringr)
 library(data.table)
 
@@ -39,28 +36,28 @@ source("config.r")
 # load manifest
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
+# read in samplesheet
+sampleSheet <- read.csv(pheno, stringsAsFactors = F)
+
+# Exclude empty wells if defined in sampleSheet
+if(exists("empty")){
+  sampleSheet <- sampleSheet[!sampleSheet$Basename %in% empty,]
+}
+
 
 #----------------------------------------------------------------------#
 # LOAD IDATS TO RGSET
 #----------------------------------------------------------------------#
 
-sampleSheet <- read.csv(pheno, stringsAsFactors = F)
-
 if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
   print("Loading rgSet")
   load(file = file.path(QCDir, "rgSet.rdat"))
 } else{
-  rgSet <- readidat(path = idatPath ,manifestfile=man ,recursive = TRUE)
+  rgSet <- readidat(path = idatPath, manifestfile=manifest ,recursive = TRUE)
   save(rgSet, file=file.path(QCDir, "rgSet.rdat"))
   print("rgSet created and saved")
 }
 
-
-# Exclude empty wells if defined in sampleSheet
-if(exists(empty)){
-  sampleSheet <- sampleSheet[!sampleSheet$Basename %in% empty,]
-  rgSet <- rgSet[,sampleSheet$Basename]
-}
 
 
 #----------------------------------------------------------------------#
@@ -187,8 +184,6 @@ QCmetrics$BsConPass <- ifelse(QCmetrics$BsCon > bsConThresh, TRUE, FALSE)
   
 
 
-  
-
 #----------------------------------------------------------------------#
 # SEX CHECK (ENMIX)
 #----------------------------------------------------------------------#
@@ -204,8 +199,11 @@ if(file.exists(file = file.path(QCDir, "sexPred.rdat"))){
 }
 
 
-QCmetrics <- left_join(QCmetrics, sexPred)
-QCmetrics$sexPass <- ifelse(QCmetrics$PredSex == QCmetrics$Sex, TRUE, FALSE)
+QCmetrics <- left_join(QCmetrics, sexPred, by = "Basename")
+
+if(sexCheck){
+  QCmetrics$sexPass <- ifelse(QCmetrics$PredSex == QCmetrics$Sex, TRUE, FALSE)
+}
 
 
 #----------------------------------------------------------------------#
@@ -217,7 +215,7 @@ if(file.exists(file = file.path(QCDir, "PCAbetas.rdat"))){
   print("Loading PCA betas object")
   load(file = file.path(QCDir, "PCAbetas.rdat"))
   
-} else{
+} else {
 # filter to autosomal probes and passed intens check samples only
   auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
   rawbetas <- getB(mraw)
@@ -226,6 +224,8 @@ if(file.exists(file = file.path(QCDir, "PCAbetas.rdat"))){
 #run PCA  
   pca <- prcomp(t(na.omit(rawbetas)))
   save(pca, file = file.path(QCDir, "PCAbetas.rdat"))
+  
+}
   
   betas.scores = pca$x
   colnames(betas.scores) = paste(colnames(betas.scores), '_betas', sep='')
@@ -236,25 +236,26 @@ if(file.exists(file = file.path(QCDir, "PCAbetas.rdat"))){
 # only save PCs which explain > 1% of the variance
   QCmetrics<-cbind(QCmetrics,betas.scores[,which(betas.pca > 0.01)])
 
+
+
+
+#----------------------------------------------------------------------#
+# FLAG SAMPLES THAT FAIL THE FIRST QC STAGE
+#----------------------------------------------------------------------#
+
+# only exclude samples where reported sex != predicted Sex if sexCheck is turned on in config.r
+if(sexCheck){
+       QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$SexPass
+} else {
+       QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass
 }
 
 
+keepCols <- c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
+              "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
+              "PassQC1")
 
-
-#----------------------------------------------------------------------#
-# REMOVE SAMPLES/PROBES THAT FAIL THE FIRST QC STAGE
-#----------------------------------------------------------------------#
-
-#rgSetPass <- rgSet[ ,QCmetrics$Basename[QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$sexPass]]
-
-#remove failed probes from betas object
-#rgSetPass <- rgSetPass[!rgSet@elementMetadata$Name %in% failedProbes, ]
-
-QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$sexPass
-
-QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
-                     "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
-                     "PassQC1")]
+QCSum<-QCmetrics[, colnames(QCmetrics) %in% keepCols]
 
 
 #----------------------------------------------------------------------#
@@ -265,7 +266,5 @@ save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
 write.csv(QCSum, file.path(QCDir, "passQCStatusStage1AllSamples.csv"), row.names = F)
 
 print("QC objects created and saved")
-
-#save(rgSetPass, file=file.path(QCDir, "rgSetPass.rdat"))
 
 
