@@ -24,15 +24,24 @@
 # file in the project folder
 
 #----------------------------------------------------------------------#
+# # STOP IF NOT REQUESTED TO RUN THIS SCRIPT
+#----------------------------------------------------------------------#
+
+source("config.r")
+
+if(!ctCheck){
+	quit(save = "no", status = 0)
+}
+
+
+#----------------------------------------------------------------------#
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
+
 print("loading packages...")
 library(MatrixGenerics)
 library(ENmix)
 library(data.table)
-
-
-source("config.r")
 
 
 #----------------------------------------------------------------------#
