@@ -55,13 +55,13 @@ mv QC.html ${NORMDIR}/QC
 Rscript cellTypeChecks.r
 
 # create cell types check QC report
-Rscript -e "rmarkdown::render('scripts/qcScripts/cellTypeQC.rmd', output_file='cellTypeQC.html')" 
+Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" 
 
 # mv markdown report to correct location
-mv scripts/qcScripts/cellTypeQC.html 2_normalised/QC
+mv cellTypeQC.html ${NORMDIR}/QC
 
 # run normalisation script
-Rscript scripts/qcScripts/normalisation.r
+Rscript normalisation.r
 
 
 ## print finish date and time
