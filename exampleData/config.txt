@@ -1,0 +1,7 @@
+## Data filepaths
+
+export DATADIR=/lustre/projects/Research_Project-MRC190311/DNAm/cannabis/mouse
+export NORMDIR=${DATADIR}/2_normalised
+export SCRIPTSDIR=/lustre/home/ew367/mouseArray/qcScripts
+
+export RVERS=R/4.2.1-foss-2022a
