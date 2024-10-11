@@ -19,6 +19,12 @@
 #----------------------------------------------------------------------#
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
+
+args<-commandArgs(trailingOnly = TRUE)
+dataDir <- args[1]
+
+setwd(dataDir)
+
 print("loading packages...")
 library(data.table)
 library(wateRmelon)
@@ -41,13 +47,20 @@ load(file = file.path(QCDir, "detP.rdat"))
 # load manifest for removing sex probes and mfg_flagged probes
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
-# load QCmetrics summary to remove failed samples
-QCSum <- read.csv(file.path(QCDir, "passQCStatusStage3AllSamples.csv"), stringsAsFactors = F)
-QCSum <- na.omit(QCSum)
-passQC <- QCSum$Basename[QCSum$passQCS3]
+# load QCmetrics and QC summary to remove failed samples
+if(ctCheck){
+  QCSum <- read.csv(file.path(QCDir, "passQCStatusStage3AllSamples.csv"), stringsAsFactors = F)
+  QCSum <- na.omit(QCSum)
+  passQC <- QCSum$Basename[QCSum$passQCS3]
+  load(file = file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
+} else {
+  QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
+  QCSum <- na.omit(QCSum)
+  passQC <- QCSum$Basename[QCSum$passQCS1]
+  load(file = file.path(QCDir, "QCmetrics.rdat"))
+}
 
-# load QCmetrics to get cell_Type data
-load(file = file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
+
 QCmetrics <- QCmetrics[QCmetrics$Basename %in% passQC,]
      
 
@@ -63,8 +76,8 @@ flagged.probes<-man$IlmnID[man$MFG_Change_Flagged == TRUE]
 betas <- betas[!row.names(betas) %in% flagged.probes,]
 
 print("filtering sex and MT probes...")
-auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
-betas<-betas[row.names(betas) %in% auto.probes,]
+#auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
+#betas<-betas[row.names(betas) %in% auto.probes,]
 
 print("filtering detP failed probes...")
 failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
@@ -88,7 +101,7 @@ mrawPass <- mraw[row.names(betas), colnames(betas)]
 
 cellTypes<-unique(QCmetrics$Cell_Type)
 
-if(cellSorted == TRUE){
+if(ctCheck){
   print("normalising within cell type...")
   
   celltypeNormbeta<-matrix(NA, nrow = nrow(assays(mrawPass)$Meth), ncol = ncol(assays(mrawPass)$Meth))
