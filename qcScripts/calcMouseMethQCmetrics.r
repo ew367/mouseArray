@@ -251,7 +251,7 @@ if(sexCheck){
 }
 
 # Create QC pass/fail object
-keepCols <- c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
+keepCols <- c("Basename", "Individual_ID", "Sample_ID",
               "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
               "PassQC1")
 
