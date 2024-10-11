@@ -16,8 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r setup, include=FALSE}
 
-#args<-commandArgs(trailingOnly = TRUE)
-args <- "C:/Users/EW367/OneDrive - University of Exeter/Documents/MouseArrays/MouseArraysZhikunAndRosie/Zhikun/mouse/"
+args<-commandArgs(trailingOnly = TRUE)
 
 projDir <- args[1]
 
