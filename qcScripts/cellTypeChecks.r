@@ -64,10 +64,6 @@ load(file = file.path(QCDir, "QCmetrics.rdat"))
 
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
-#QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
-                     #"IntensityPass", "PfiltPass", "BsConPass", "sexPass",
-                     #"PassQC1")]
-
 QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
 
 passQC<-QCSum$Basename[QCSum[,"PassQC1"]]
