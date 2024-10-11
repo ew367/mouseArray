@@ -43,7 +43,7 @@ sampleSheet <- read.csv(pheno, stringsAsFactors = F)
 
 # Introduction
 
-QC report for Zhikuns Data
+QC report for Mouse Data
 
 Pipeline updated October 2024
 
