@@ -21,6 +21,12 @@
 #----------------------------------------------------------------------#
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
+
+args<-commandArgs(trailingOnly = TRUE)
+dataDir <- args[1]
+
+setwd(dataDir)
+
 print("loading packages...")
 
 library(ENmix)
@@ -245,17 +251,18 @@ if(file.exists(file = file.path(QCDir, "PCAbetas.rdat"))){
 
 # only exclude samples where reported sex != predicted Sex if sexCheck is turned on in config.r
 if(sexCheck){
-       QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$SexPass
+       QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass & QCmetrics$sexPass
 } else {
        QCmetrics$PassQC1 <- QCmetrics$IntensityPass & QCmetrics$PfiltPass & QCmetrics$BsConPass
 }
 
 # Create QC pass/fail object
-keepCols <- c("Basename", "Individual_ID", "Sample_ID",
+keepCols <- c("Basename", "Individual_ID", projVar,
               "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
               "PassQC1")
 
 QCSum<-QCmetrics[, colnames(QCmetrics) %in% keepCols]
+
 
 
 #----------------------------------------------------------------------#
