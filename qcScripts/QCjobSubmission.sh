@@ -36,14 +36,13 @@ cd $SCRIPTSDIR
 
 
 ## load modules
-module load Pandoc
 module load $RVERS
 
 #make directory for QCdata
 mkdir -p ${NORMDIR}/QC
 
 # run the script to load idats to rgset and calculate QC metrics
-Rscript calcMouseMethQCmetrics.r 
+Rscript calcMouseMethQCmetrics.r $DATADIR
 
 # create 1st stage QC report
 Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
