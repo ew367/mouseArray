@@ -13,7 +13,7 @@
 
 #------------------------------------------------------
 
-# 1. command line argument input is your project folder.
+# 1. command line argument input is your config.txt file
 
 # e.g. to run sbatch QCjobSubmission.sh <filepath/to/projectFolder>
 
@@ -28,36 +28,39 @@ JOBNAME="QCDNAdata"
 echo Job sumbitted from:
   echo $SLURM_SUBMIT_DIR
 
-# Move the user to the project directory
-cd $1
+#load config.txt file
+source $1 || exit 1
+
+# Move the user to the scripts folder
+cd $SCRIPTSDIR
 
 
 ## load modules
-module load Pandoc
-module load R/4.2.1-foss-2022a
+module load $RVERS
 
-mkdir -p 2_normalised/QC
+#make directory for QCdata
+mkdir -p ${NORMDIR}/QC
 
 # run the script to load idats to rgset and calculate QC metrics
-Rscript scripts/qcScripts/calcMouseMethQCmetrics.r 
+Rscript calcMouseMethQCmetrics.r $DATADIR
 
 # create 1st stage QC report
-Rscript -e "rmarkdown::render('scriptsqcSCripts//QC.rmd', output_file='QC.html')" --args $1
+Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
 
 # mv markdown report to correct location
-mv scriptsqcScripts/QC.html 2_normalised/QC
+mv QC.html ${NORMDIR}/QC
 
 # run cluster cell types script
-Rscript scripts/qcSCripts/cellTypeChecks.r
+Rscript cellTypeChecks.r
 
 # create cell types check QC report
-Rscript -e "rmarkdown::render('scripts/qcScripts/cellTypeQC.rmd', output_file='cellTypeQC.html')" 
+Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" 
 
 # mv markdown report to correct location
-mv scripts/qcScripts/cellTypeQC.html 2_normalised/QC
+mv cellTypeQC.html ${NORMDIR}/QC
 
 # run normalisation script
-Rscript scripts/qcScripts/normalisation.r
+Rscript normalisation.r
 
 
 ## print finish date and time

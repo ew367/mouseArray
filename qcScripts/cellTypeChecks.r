@@ -24,15 +24,29 @@
 # file in the project folder
 
 #----------------------------------------------------------------------#
+# # STOP IF NOT REQUESTED TO RUN THIS SCRIPT
+#----------------------------------------------------------------------#
+
+args<-commandArgs(trailingOnly = TRUE)
+dataDir <- args[1]
+
+setwd(dataDir)
+
+source("config.r")
+
+if(!ctCheck){
+	quit(save = "no", status = 0)
+}
+
+
+#----------------------------------------------------------------------#
 # LOAD PACKAGES
 #----------------------------------------------------------------------#
+
 print("loading packages...")
 library(MatrixGenerics)
 library(ENmix)
 library(data.table)
-
-
-source("config.r")
 
 
 #----------------------------------------------------------------------#
@@ -49,10 +63,6 @@ betas <- getB(mraw)
 load(file = file.path(QCDir, "QCmetrics.rdat"))
 
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
-
-#QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
-                     #"IntensityPass", "PfiltPass", "BsConPass", "sexPass",
-                     #"PassQC1")]
 
 QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
 
