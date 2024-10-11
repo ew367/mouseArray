@@ -1,5 +1,5 @@
 ---
-title: "DNA methylation Illumina Arrays Quality Control Report"
+title: "DNA methylation Illumina Mouse Array Quality Control Report"
 author: "Emma Walker"
 output: 
   html_document:
@@ -9,49 +9,55 @@ output:
 ---
 
 
-```{r setup, include=FALSE}
+```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Introduction
 
-QC report for APP-KI cell sorted mouse data (n samples = 204)
+```{r setup, include=FALSE}
 
-Methylation QC workflow based on combination of https://www.bioconductor.org/packages/release/workflows/vignettes/methylationArrayAnalysis/inst/doc/methylationArrayAnalysis.html and code by Emma Walker and Nick Clifton
+#args<-commandArgs(trailingOnly = TRUE)
+args <- "C:/Users/EW367/OneDrive - University of Exeter/Documents/MouseArrays/MouseArraysZhikunAndRosie/Zhikun/mouse/"
 
-Updated May 2024
-
-# Loading data
-
-An obejct of class ENmix::rgDataSet was made using the ENmix package and is loaded in alongside the sample sheet containing the pheno data for the mice and QCmetrics object created by the calcMouseMethQCmetrics.r script
+projDir <- args[1]
 
 
-```{r, make rgSet,  warning=FALSE, message=FALSE, echo = FALSE}
-
-#https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
-
-
-library(ENmix)
+library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 library(ggplot2)
 library(dplyr)
 library(minfi)
 library(gridExtra)
 library(corrplot)
 
-#args<-commandArgs(trailingOnly = TRUE)
-args<-"/lustre/projects/Research_Project-191406/cellSortedEWAS"
-
 setwd(args[1])
 
-source("config.r")
+
+source(file.path(projDir,"config.r"))
 
 
-
+#load sampleSheet
 sampleSheet <- read.csv(pheno, stringsAsFactors = F)
+
+
+```
+
+# Introduction
+
+QC report for Zhikuns Data
+
+Pipeline updated October 2024
+
+
+# Loading data
+
+An object of class ENmix::rgDataSet was made using the ENmix package and is loaded in alongside the sample sheet containing the pheno data for the mice, and QCmetrics object created by the calcMouseMethQCmetrics.r script
+
+
+```{r, load QCmetrics,  warning=FALSE, message=FALSE, echo = FALSE}
+
 
 load(file = file.path(QCDir, "rgSet.rdat"))
 load(file = file.path(QCDir, "QCmetrics.rdat"))
-
 load(file = file.path(QCDir, "detP.rdat"))
 load(file = file.path(QCDir, "bsCon.rdat"))
 load(file = file.path(QCDir, "detP.rdat"))
@@ -61,7 +67,9 @@ betas <- getB(mraw)
 
 
 # add column for neun and non neun celltypes
-QCmetrics$NeuN <- ifelse(QCmetrics$Cell_Type == "NEUN", "NEUN", "OTHER")
+if(ctCheck){
+  QCmetrics$NeuN <- ifelse(QCmetrics$Cell_Type == "NEUN", "NEUN", "OTHER")
+}
 
 ```
 
@@ -77,29 +85,35 @@ The intensity check is often the biggest indicator of sample quality. The median
 ```{r plotintensities, echo=FALSE, message=F, dev=c('png', 'pdf')}
 
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Group)) +
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Individual_ID)) +
    geom_point() +
    xlab("Median M intensity") +
    ylab("Median U intensity") +
-   ggtitle("Signal Intensities by genotype")
+   ggtitle("Signal Intensities by Individual_ID")
 
+if("Age" %in% colnames(QCmetrics)){
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Age)) +
   geom_point() +
   xlab("Median M intensity") +
   ylab("Median U intensity") +
   ggtitle("Signal Intensities by age")
+}
 
+if("Cell_Type" %in% colnames(QCmetrics)){
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Cell_Type))+
   geom_point()+
   xlab("Median M intensity")+
   ylab("Median U intensity") + 
-  ggtitle("Signal Intensities by nuclei fraction")
+  ggtitle("Signal Intensities by Cell Type")
+}
 
+if("Sex" %in% colnames(QCmetrics)){
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Sex))+
   geom_point()+
   xlab("Median M intensity")+
   ylab("Median U intensity") + 
   ggtitle("Signal Intensities by sex")
+}
 
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = gsub("_.*", "", Basename))) +
   geom_point() +
@@ -107,18 +121,21 @@ ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = gsub("_.*", "", Basen
   ylab("Median U intensity") +
   ggtitle("Signal Intensities by Chip")
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = N_Nuclei)) +
+if("Nuclei_Conc" %in% colnames(QCmetrics)){
+ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Nuclei_Conc)) +
   geom_point() +
   xlab("Median M intensity") +
   ylab("Median U intensity") +
-  ggtitle("Signal Intensities by N nuclei")
+  ggtitle("Signal Intensities by Nuclei Conc")
+}
 
-
+if("Batch" %in% colnames(QCmetrics)){
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Batch)) +
   geom_point() +
   xlab("Median M intensity") +
   ylab("Median U intensity") +
   ggtitle("Signal Intensities by Batch")
+}
 
 
 ```
@@ -203,7 +220,7 @@ ggplot(QCmetrics, aes(x = BsCon))+
 
 betas <- betas[, QCmetrics$Basename]
 
-densityPlot(betas, main = "All Betas", sampGroups = QCmetrics$Cell_Type)
+densityPlot(betas, main = "All Betas")
 densityPlot(betas, main = "Passed Samples", sampGroups = QCmetrics$PassQC1)
 
 
@@ -223,12 +240,12 @@ colsToKeep <- c(c(c("M.median","U.median","BsCon", "pFiltPass", "Cell_Type", "Ba
 colsToKeep <- colsToKeep[colsToKeep %in% colnames(QCmetrics)]
 
 corDF <- QCmetrics[,colsToKeep]
-corDF$Cell_Type <- as.numeric(as.factor(corDF$Cell_Type))
-corDF$Batch <- as.numeric(as.factor(corDF$Batch))
+if(ctCheck){corDF$Cell_Type <- as.numeric(as.factor(corDF$Cell_Type))}
+#corDF$Batch <- as.numeric(as.factor(corDF$Batch))
 corDF$Sex <- as.numeric(as.factor(corDF$Sex))
 
 
-corrplot(cor(corDF, use = "p"))
+corrplot::corrplot(cor(corDF, use = "p"))
 
 ```
 
