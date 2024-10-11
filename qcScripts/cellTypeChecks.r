@@ -27,6 +27,11 @@
 # # STOP IF NOT REQUESTED TO RUN THIS SCRIPT
 #----------------------------------------------------------------------#
 
+args<-commandArgs(trailingOnly = TRUE)
+dataDir <- args[1]
+
+setwd(dataDir)
+
 source("config.r")
 
 if(!ctCheck){
