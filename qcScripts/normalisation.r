@@ -120,7 +120,9 @@ if(ctCheck){
 } else{
   print("normalising bulk tissue...")
   normBeta <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
-  save(normBeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
+  if(identical(colnames(normBeta), QCmetrics$Basename)){
+    save(normBeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
+  }
 }
 
 
