@@ -56,7 +56,7 @@ if(ctCheck){
 } else {
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
   QCSum <- na.omit(QCSum)
-  passQC <- QCSum$Basename[QCSum$passQC1]
+  passQC <- QCSum$Basename[QCSum$PassQC1]
   load(file = file.path(QCDir, "QCmetrics.rdat"))
 }
 
@@ -99,10 +99,10 @@ mrawPass <- mraw[row.names(betas), colnames(betas)]
 #### This needs to be checked still!!
 ## also make sure that cols/rows are in same order before saving
 
-cellTypes<-unique(QCmetrics$Cell_Type)
 
 if(ctCheck){
   print("normalising within cell type...")
+  cellTypes<-unique(QCmetrics$Cell_Type)
   
   celltypeNormbeta<-matrix(NA, nrow = nrow(assays(mrawPass)$Meth), ncol = ncol(assays(mrawPass)$Meth))
   rownames(celltypeNormbeta)<-rownames(betas)
@@ -120,7 +120,7 @@ if(ctCheck){
 } else{
   print("normalising bulk tissue...")
   normBeta <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
-  save(normbeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
+  save(normBeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
 }
 
 
