@@ -45,22 +45,22 @@ mkdir -p ${NORMDIR}/QC
 Rscript calcMouseMethQCmetrics.r $DATADIR
 
 # create 1st stage QC report
-Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
+Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR
 
 # mv markdown report to correct location
 mv QC.html ${NORMDIR}/QC
 
 # run cluster cell types script
-Rscript cellTypeChecks.r
+Rscript cellTypeChecks.r $DATADIR
 
 # create cell types check QC report
-Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" 
+Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" $DATADIR
 
 # mv markdown report to correct location
 mv cellTypeQC.html ${NORMDIR}/QC
 
 # run normalisation script
-Rscript normalisation.r
+Rscript normalisation.r $DATADIR
 
 
 ## print finish date and time
