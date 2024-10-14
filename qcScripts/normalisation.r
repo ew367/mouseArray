@@ -56,7 +56,7 @@ if(ctCheck){
 } else {
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
   QCSum <- na.omit(QCSum)
-  passQC <- QCSum$Basename[QCSum$passQCS1]
+  passQC <- QCSum$Basename[QCSum$passQC1]
   load(file = file.path(QCDir, "QCmetrics.rdat"))
 }
 
@@ -75,7 +75,7 @@ print("filtering flagged probes...")
 flagged.probes<-man$IlmnID[man$MFG_Change_Flagged == TRUE]
 betas <- betas[!row.names(betas) %in% flagged.probes,]
 
-print("filtering sex and MT probes...")
+#print("filtering sex and MT probes...")
 #auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
 #betas<-betas[row.names(betas) %in% auto.probes,]
 
