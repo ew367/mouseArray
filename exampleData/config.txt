@@ -1,7 +1,6 @@
 ## Data filepaths
 
 export DATADIR=/filepath/to/project/folder
-export NORMDIR=${DATADIR}/2_normalised
 export SCRIPTSDIR=/filepath/to/scripts/folder/qcScripts
 
 export RVERS=R/4.2.1-foss-2022a
