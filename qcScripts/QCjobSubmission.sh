@@ -31,12 +31,17 @@ echo Job sumbitted from:
 #load config.txt file
 source $1 || exit 1
 
+#define normDir
+NORMDIR <- ${DATADIR}/2_normalised
+
+
 # Move the user to the scripts folder
 cd $SCRIPTSDIR
 
 
 ## load modules
 module load $RVERS
+module load Pandoc
 
 #make directory for QCdata
 mkdir -p ${NORMDIR}/QC
