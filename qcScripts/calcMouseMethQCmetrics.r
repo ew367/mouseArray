@@ -41,7 +41,7 @@ setwd(dataDir)
 pheno <- "0_metadata/sampleSheet.csv"
 idatPath <- "1_raw"
 normDir <- "2_normalised"
-QCDir <- file.path(normDir, "QC")
+QCDir <- "2_normalised/QC"
 
 
 source("config.r")

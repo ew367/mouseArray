@@ -32,7 +32,7 @@ echo Job sumbitted from:
 source $1 || exit 1
 
 #define normDir
-NORMDIR <- ${DATADIR}/2_normalised
+NORMDIR=${DATADIR}/2_normalised
 
 
 # Move the user to the scripts folder
@@ -59,7 +59,7 @@ mv QC.html ${NORMDIR}/QC
 Rscript cellTypeChecks.r $DATADIR
 
 # create cell types check QC report
-Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" $DATADIR
+#Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" $DATADIR
 
 # mv markdown report to correct location
 mv cellTypeQC.html ${NORMDIR}/QC

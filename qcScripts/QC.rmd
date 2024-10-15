@@ -18,7 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 args<-commandArgs(trailingOnly = TRUE)
 
-projDir <- args[1]
+#projDir <- args[1]
+dataDir <- "/lustre/projects/Research_Project-MRC190311/DNAm/circadianMouse/Albert"
+
 
 
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
@@ -28,15 +30,18 @@ library(minfi)
 library(gridExtra)
 library(corrplot)
 
-setwd(args[1])
+setwd(dataDir)
+
+pheno <- file.path(dataDir, "0_metadata/sampleSheet.csv")
+normDir <- file.path(dataDir, "2_normalised")
+QCDir <- file.path(normDir, "QC")
 
 
-source(file.path(projDir,"config.r"))
+source(file.path(dataDir,"config.r"))
 
 
 #load sampleSheet
 sampleSheet <- read.csv(pheno, stringsAsFactors = F)
-
 
 ```
 
@@ -81,7 +86,7 @@ The intensity check is often the biggest indicator of sample quality. The median
 
 # Intensity plots
 
-```{r plotintensities, echo=FALSE, message=F, dev=c('png', 'pdf')}
+```{r plotintensities, echo=FALSE, message=F}
 
 
 ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Individual_ID)) +
@@ -222,8 +227,6 @@ betas <- betas[, QCmetrics$Basename]
 densityPlot(betas, main = "All Betas")
 densityPlot(betas, main = "Passed Samples", sampGroups = QCmetrics$PassQC1)
 
-
-
 ```
 
 
@@ -239,10 +242,15 @@ colsToKeep <- c(c(c("M.median","U.median","BsCon", "pFiltPass", "Cell_Type", "Ba
 colsToKeep <- colsToKeep[colsToKeep %in% colnames(QCmetrics)]
 
 corDF <- QCmetrics[,colsToKeep]
-if(ctCheck){corDF$Cell_Type <- as.numeric(as.factor(corDF$Cell_Type))}
-#corDF$Batch <- as.numeric(as.factor(corDF$Batch))
-corDF$Sex <- as.numeric(as.factor(corDF$Sex))
 
+# change to correct type
+if(ctCheck){corDF$Cell_Type <- as.numeric(as.factor(corDF$Cell_Type))}
+if("Batch" %in% colnames(sampleSheet)){
+  corDF$Batch <- as.numeric(as.factor(corDF$Batch))
+}
+if("Sex" %in% colnames(sampleSheet)){
+  corDF$Sex <- as.numeric(as.factor(corDF$Sex))
+}
 
 corrplot::corrplot(cor(corDF, use = "p"))
 

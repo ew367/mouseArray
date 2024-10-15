@@ -23,12 +23,15 @@
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[1]
 
-setwd(dataDir)
-
 print("loading packages...")
 library(data.table)
 library(wateRmelon)
 library(ENmix)
+
+setwd(dataDir)
+
+normDir <- "2_normalised"
+QCDir <- "2_normalised/QC"
 
 
 source("config.r")
