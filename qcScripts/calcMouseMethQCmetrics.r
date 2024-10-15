@@ -15,7 +15,7 @@
 #----------------------------------------------------------------------#
 
 # parameters and relative paths etc are loaded from the config.r 
-# file in the project folder
+# file in the dataect folder
 
 
 #----------------------------------------------------------------------#
@@ -25,8 +25,6 @@
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[1]
 
-setwd(dataDir)
-
 print("loading packages...")
 
 library(ENmix)
@@ -34,6 +32,16 @@ library(SummarizedExperiment)
 library(dplyr)
 library(stringr)
 library(data.table)
+
+
+# define directories
+
+setwd(dataDir)
+
+pheno <- "0_metadata/sampleSheet.csv"
+idatPath <- "1_raw"
+normDir <- "2_normalised"
+QCDir <- file.path(normDir, "QC")
 
 
 source("config.r")
