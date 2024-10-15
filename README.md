@@ -16,10 +16,13 @@ PREQUISITES:
   * 3_analysis
   * logFiles
   
-* A config file in the project folder containing file paths and thresholds etc specific to their project (see exampleData/config.r for an example)
+* A config.txt file in the project folder containing file paths specific to the project (see exampleData/config.txt for an example)
+* A config.r file containg threshold values etc specific to your project (see exampleData/config.r for an example)
 
 * A file named sampleSheet.csv in the 0_metadata folder which contains the following columns, and any other associated phenotype data:
     "Basename","Chip_ID","Chip_Position","Plate","Batch", "Individual_ID","Sample_ID","Cell_Type","N_Nuclei","Group","Age","Sex". (see exampleData/sampleSheet.csv)
+
+* A manifest file (e.g. MouseMethylation-12v1-0_A2.csv) in the 0_metadata folder
     
 * raw idat files in the 1_raw folder
 
