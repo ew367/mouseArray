@@ -220,7 +220,6 @@ QCmetrics<-cbind(QCmetrics, maxSD)
 # use Mahalanobis to calculate distance with cell type medians from PCAs 
 # exclude outliers identified above from calculation of median profile
 
-print("Calculating Mahalanobis distance")
 
 cellMedPCA<-aggregate(betas.scores[!QCmetrics$studentCTOutlier2,], by = list(QCmetrics$Cell_Type[!QCmetrics$studentCTOutlier2]), median, na.rm = TRUE)
 rownames(cellMedPCA)<-cellMedPCA[,1]
