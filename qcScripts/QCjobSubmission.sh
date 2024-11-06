@@ -31,9 +31,11 @@ echo Job sumbitted from:
 #load config.txt file
 source $1 || exit 1
 
-#define normDir
+# create directry for QC and normalised data
 NORMDIR=${DATADIR}/2_normalised
 
+mkdir -p $NORMDIR
+mkdir -p ${NORMDIR}/QC
 
 # Move the user to the scripts folder
 cd $SCRIPTSDIR
@@ -43,20 +45,22 @@ cd $SCRIPTSDIR
 module load $RVERS
 module load Pandoc
 
-#make directory for QCdata
-mkdir -p ${NORMDIR}/QC
 
 # run the script to load idats to rgset and calculate QC metrics
-Rscript calcMouseMethQCmetrics.r $DATADIR
+Rscript calcMouseMethQCmetrics.r $DATADIR $REFDIR
+
+# run cluster cell types script
+Rscript cellTypeChecks.r $DATADIR
 
 # create 1st stage QC report
 Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR
 
+
+
 # mv markdown report to correct location
 mv QC.html ${NORMDIR}/QC
 
-# run cluster cell types script
-Rscript cellTypeChecks.r $DATADIR
+
 
 # create cell types check QC report
 #Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" $DATADIR
