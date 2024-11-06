@@ -30,6 +30,7 @@ library(minfi)
 library(gridExtra)
 library(corrplot)
 
+
 setwd(dataDir)
 
 pheno <- file.path(dataDir, "0_metadata/sampleSheet.csv")
@@ -257,4 +258,9 @@ corrplot::corrplot(cor(corDF, use = "p"))
 ```
 
 
+```{r, child=if (sexCheck) 'rmarkdownChild/sexCheck.rmd'}
+```
 
+
+```{r, child=if (ctCheck) 'rmarkdownChild/ctCheck.rmd'}
+```

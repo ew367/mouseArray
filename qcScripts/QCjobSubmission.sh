@@ -37,6 +37,9 @@ NORMDIR=${DATADIR}/2_normalised
 mkdir -p $NORMDIR
 mkdir -p ${NORMDIR}/QC
 
+# make sure the raw data folder is readable by everyone
+chmod -R 755 ${DATADIR}/1_raw
+
 # Move the user to the scripts folder
 cd $SCRIPTSDIR
 
@@ -52,21 +55,11 @@ Rscript calcMouseMethQCmetrics.r $DATADIR $REFDIR
 # run cluster cell types script
 Rscript cellTypeChecks.r $DATADIR
 
-# create 1st stage QC report
+# create QC report
 Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR
-
-
 
 # mv markdown report to correct location
 mv QC.html ${NORMDIR}/QC
-
-
-
-# create cell types check QC report
-#Rscript -e "rmarkdown::render('cellTypeQC.rmd', output_file='cellTypeQC.html')" $DATADIR
-
-# mv markdown report to correct location
-mv cellTypeQC.html ${NORMDIR}/QC
 
 # run normalisation script
 Rscript normalisation.r $DATADIR
