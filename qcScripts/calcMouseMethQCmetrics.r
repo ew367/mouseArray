@@ -197,7 +197,7 @@ QCmetrics <- left_join(QCmetrics, pfiltdf, by = "Basename")
 # check if any probes fail in more than pFiltSampleThresh of samples
 # samples with low intensity/bscon values or fail pfilt sample check above are excluded first
 
-goodsamps <- QCmetrics$IntensityPass & QCmetrics$BsConPass > thresBS & QCmetrics$PfiltPass
+goodsamps <- QCmetrics$IntensityPass & QCmetrics$BsConPass > bsConThresh & QCmetrics$PfiltPass
 detP <- detP[,goodsamps]
 failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
 save(failedProbes, file = file.path(QCDir, "failedProbes.rdat"))
