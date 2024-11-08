@@ -17,11 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r setup, include=FALSE}
 
 args<-commandArgs(trailingOnly = TRUE)
-
-#projDir <- args[1]
-dataDir <- "/lustre/projects/Research_Project-MRC190311/DNAm/circadianMouse/Albert"
-
-
+dataDir <- args[1]
+dataDir <- "/lustre/projects/Research_Project-191406/ARRand5xFAD/"
 
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 library(ggplot2)
@@ -70,12 +67,24 @@ load(file = file.path(QCDir, "mraw.rdat"))
 
 betas <- getB(mraw)
 
+# define variables to plot
+plotVars <- c(projVar, "Chip_ID")
 
 # add column for neun and non neun celltypes
 if(ctCheck){
   QCmetrics$NeuN <- ifelse(QCmetrics$Cell_Type == "NEUN", "NEUN", "OTHER")
 }
 
+QCmetrics$Chip_ID <- as.character(QCmetrics$Chip_ID)
+
+# make sure age is numeric if it ia in the sample sheet
+if(exists(QCmetrics$Age)){
+  QCmetrics$Age <- as.numeric(QCmetrics$Age)
+}
+
+for(i in plotVars){
+  QCmetrics[,i] <- trimws(QCmetrics[,i])
+}
 ```
 
 # Intensity check
@@ -89,57 +98,34 @@ The intensity check is often the biggest indicator of sample quality. The median
 
 ```{r plotintensities, echo=FALSE, message=F}
 
+# define function for catagorical datatype plots
+factorIntensityPlots <- function(data, plotParam) {
+  ggplot(data, aes(x = M.median, y = U.median, colour = as.factor(!!sym(plotParam)))) +
+    geom_point() +
+    xlab("Median M intensity") +
+    ylab("Median U intensity") +
+    ggtitle(plotParam)+
+    labs(colour = plotParam)
+}
 
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Individual_ID)) +
-   geom_point() +
-   xlab("Median M intensity") +
-   ylab("Median U intensity") +
-   ggtitle("Signal Intensities by Individual_ID")
-
-if("Age" %in% colnames(QCmetrics)){
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Age)) +
+# define function for continous datatype plots
+continuousIntensityPlots <- function(data, plotParam) {
+  ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = !!sym(plotParam))) +
   geom_point() +
   xlab("Median M intensity") +
   ylab("Median U intensity") +
-  ggtitle("Signal Intensities by age")
+  scale_color_gradient(low = "blue", high = "red")+
+  ggtitle(plotParam)+
+  labs(colour = plotParam)
 }
 
-if("Cell_Type" %in% colnames(QCmetrics)){
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Cell_Type))+
-  geom_point()+
-  xlab("Median M intensity")+
-  ylab("Median U intensity") + 
-  ggtitle("Signal Intensities by Cell Type")
-}
 
-if("Sex" %in% colnames(QCmetrics)){
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Sex))+
-  geom_point()+
-  xlab("Median M intensity")+
-  ylab("Median U intensity") + 
-  ggtitle("Signal Intensities by sex")
-}
-
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = gsub("_.*", "", Basename))) +
-  geom_point() +
-  xlab("Median M intensity") +
-  ylab("Median U intensity") +
-  ggtitle("Signal Intensities by Chip")
-
-if("Nuclei_Conc" %in% colnames(QCmetrics)){
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Nuclei_Conc)) +
-  geom_point() +
-  xlab("Median M intensity") +
-  ylab("Median U intensity") +
-  ggtitle("Signal Intensities by Nuclei Conc")
-}
-
-if("Batch" %in% colnames(QCmetrics)){
-ggplot(QCmetrics, aes(x = M.median, y = U.median, colour = Batch)) +
-  geom_point() +
-  xlab("Median M intensity") +
-  ylab("Median U intensity") +
-  ggtitle("Signal Intensities by Batch")
+for(i in plotVars){
+  if(!is.numeric(QCmetrics[,i])){
+    print(factorIntensityPlots(QCmetrics, i))
+  } else {
+    print(continuousIntensityPlots(QCmetrics, i))
+  }
 }
 
 
@@ -173,33 +159,33 @@ g_legend <- function(a.gplot){
 }
 
 
-plateHeatmap <- ggplot(data=QCmetrics, aes(x=SentrixPosition, y=SentrixID)) +
-  scale_fill_gradientn(colours=colorRamps::matlab.like(100), limits=c(min(QCmetrics$U.median, QCmetrics$M.median),max(QCmetrics$U.median, QCmetrics$M.median))) +
-  labs(x="", y="") +
-  theme_minimal() + 
-  coord_equal() +
-  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust=1))
+#plateHeatmap <- ggplot(data=QCmetrics, aes(x=SentrixPosition, y=SentrixID)) +
+ # scale_fill_gradientn(colours=colorRamps::matlab.like(100), limits=c(min(QCmetrics$U.median, QCmetrics$M.median),max(QCmetrics$U.median, QCmetrics$M.median))) +
+  #labs(x="", y="") +
+  #theme_minimal() + 
+  #coord_equal() +
+  #t#heme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust=1))
 
-plot1 <- plateHeatmap +
-  ggtitle("Median Methylated Intensity") +
-  geom_tile(aes(fill=M.median), colour = "white") +
-  theme(legend.position = "none")
+#plot1 <- plateHeatmap +
+#  ggtitle("Median Methylated Intensity") +
+ # geom_tile(aes(fill=M.median), colour = "white") +
+  #theme(legend.position = "none")
 
-plot2 <- plateHeatmap +
-  ggtitle("Median Unmethylated Intensity") +
-  geom_tile(aes(fill=U.median), colour = "white") +
-  theme(legend.position = "none")
+#plot2 <- plateHeatmap +
+ # ggtitle("Median Unmethylated Intensity") +
+ # geom_tile(aes(fill=U.median), colour = "white") +
+ # theme(legend.position = "none")
 
-legendplot <- plateHeatmap + 
-  geom_tile(aes(fill=U.median), colour = "white") +
-  labs(fill="Intensity", alpha="Control") +
-  scale_alpha_manual(values=c(1,1,1)) + 
-  guides(alpha = guide_legend(override.aes = list(colour="black", pch=16)))
+#legendplot <- plateHeatmap + 
+ # geom_tile(aes(fill=U.median), colour = "white") +
+ # labs(fill="Intensity", alpha="Control") +
+  #scale_alpha_manual(values=c(1,1,1)) + 
+  #guides(alpha = guide_legend(override.aes = list(colour="black", pch=16)))
 
-legend <- g_legend(legendplot)
+#legend <- g_legend(legendplot)
 
-chip_heatmaps <- grid.arrange(plot1, plot2, legend, ncol=3, widths=c(3/7, 3/7, 1/7))
-ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "png")
+#chip_heatmaps <- grid.arrange(plot1, plot2, legend, ncol=3, widths=c(3/7, 3/7, 1/7))
+#ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "png")
 
 ###################
 ```
@@ -258,9 +244,3 @@ corrplot::corrplot(cor(corDF, use = "p"))
 ```
 
 
-```{r, child=if (sexCheck) 'rmarkdownChild/sexCheck.rmd'}
-```
-
-
-```{r, child=if (ctCheck) 'rmarkdownChild/ctCheck.rmd'}
-```
