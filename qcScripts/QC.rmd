@@ -17,8 +17,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r setup, include=FALSE}
 
 args<-commandArgs(trailingOnly = TRUE)
-dataDir <- args[1]
-dataDir <- "/lustre/projects/Research_Project-191406/ARRand5xFAD/"
+dataDir <- args[2]
+#dataDir <- "/lustre/projects/Research_Project-191406/ARRand5xFAD/"
+print(dataDir)
 
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 library(ggplot2)
@@ -28,17 +29,23 @@ library(gridExtra)
 library(corrplot)
 
 
-setwd(dataDir)
+pheno <- paste0(dataDir, "0_metadata/sampleSheet.csv")
+normDir <- paste0(dataDir, "2_normalised")
+QCDir <- paste0(normDir, "/QC")  
+configFile <- paste0(dataDir, "config.r") 
 
-pheno <- file.path(dataDir, "0_metadata/sampleSheet.csv")
-normDir <- file.path(dataDir, "2_normalised")
-QCDir <- file.path(normDir, "QC")
+# load config.r
+if (file.exists(configFile)) {
+  source(configFile)
+} else {
+  stop("config.r file does not exist.")
+}
 
+# load sampleSheet
+if (!file.exists(pheno)) {
+  stop("Phenotype file not found at ", pheno)
+}
 
-source(file.path(dataDir,"config.r"))
-
-
-#load sampleSheet
 sampleSheet <- read.csv(pheno, stringsAsFactors = F)
 
 ```
@@ -57,13 +64,14 @@ An object of class ENmix::rgDataSet was made using the ENmix package and is load
 
 ```{r, load QCmetrics,  warning=FALSE, message=FALSE, echo = FALSE}
 
+print(QCDir)
 
-load(file = file.path(QCDir, "rgSet.rdat"))
-load(file = file.path(QCDir, "QCmetrics.rdat"))
-load(file = file.path(QCDir, "detP.rdat"))
-load(file = file.path(QCDir, "bsCon.rdat"))
-load(file = file.path(QCDir, "detP.rdat"))
-load(file = file.path(QCDir, "mraw.rdat"))
+load(file = paste0(QCDir, "/rgSet.rdat"))
+load(file = paste0(QCDir, "/QCmetrics.rdat"))
+load(file = paste0(QCDir, "/detP.rdat"))
+load(file = paste0(QCDir, "/bsCon.rdat"))
+load(file = paste0(QCDir, "/detP.rdat"))
+load(file = paste0(QCDir, "/mraw.rdat"))
 
 betas <- getB(mraw)
 
@@ -78,13 +86,16 @@ if(ctCheck){
 QCmetrics$Chip_ID <- as.character(QCmetrics$Chip_ID)
 
 # make sure age is numeric if it ia in the sample sheet
-if(exists(QCmetrics$Age)){
+if("Age" %in% colnames(QCmetrics)){
   QCmetrics$Age <- as.numeric(QCmetrics$Age)
 }
 
 for(i in plotVars){
-  QCmetrics[,i] <- trimws(QCmetrics[,i])
+  if(is.character(QCmetrics[,i])){
+    QCmetrics[,i] <- trimws(QCmetrics[,i])
+  }
 }
+
 ```
 
 # Intensity check
@@ -131,17 +142,6 @@ for(i in plotVars){
 
 ```
 
-# P filter 
-
-```{r, pfilt, echo=FALSE}
-
-failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
-
-```
-
-`r length(failedProbes)` probes fail at a pvalue threshold of `r pFiltProbeThresh` in more than `r pFiltSampleThresh`% of samples
-
-
 
 
 ```{r heatmaps, echo=FALSE, message=F}
@@ -159,36 +159,37 @@ g_legend <- function(a.gplot){
 }
 
 
-#plateHeatmap <- ggplot(data=QCmetrics, aes(x=SentrixPosition, y=SentrixID)) +
- # scale_fill_gradientn(colours=colorRamps::matlab.like(100), limits=c(min(QCmetrics$U.median, QCmetrics$M.median),max(QCmetrics$U.median, QCmetrics$M.median))) +
-  #labs(x="", y="") +
-  #theme_minimal() + 
-  #coord_equal() +
-  #t#heme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust=1))
+plateHeatmap <- ggplot(data=QCmetrics, aes(x=SentrixPosition, y=SentrixID)) +
+  scale_fill_gradientn(colours=colorRamps::matlab.like(100), limits=c(min(QCmetrics$U.median, QCmetrics$M.median),max(QCmetrics$U.median, QCmetrics$M.median))) +
+  labs(x="", y="") +
+  theme_minimal() + 
+  coord_equal() +
+  theme(plot.title = element_text(hjust = 0.5), axis.text.x = element_text(angle = 90, hjust=1))
 
-#plot1 <- plateHeatmap +
-#  ggtitle("Median Methylated Intensity") +
- # geom_tile(aes(fill=M.median), colour = "white") +
-  #theme(legend.position = "none")
+plot1 <- plateHeatmap +
+  ggtitle("Median Methylated Intensity") +
+  geom_tile(aes(fill=M.median), colour = "white") +
+  theme(legend.position = "none")
 
-#plot2 <- plateHeatmap +
- # ggtitle("Median Unmethylated Intensity") +
- # geom_tile(aes(fill=U.median), colour = "white") +
- # theme(legend.position = "none")
+plot2 <- plateHeatmap +
+  ggtitle("Median Unmethylated Intensity") +
+  geom_tile(aes(fill=U.median), colour = "white") +
+  theme(legend.position = "none")
 
-#legendplot <- plateHeatmap + 
- # geom_tile(aes(fill=U.median), colour = "white") +
- # labs(fill="Intensity", alpha="Control") +
-  #scale_alpha_manual(values=c(1,1,1)) + 
-  #guides(alpha = guide_legend(override.aes = list(colour="black", pch=16)))
+legendplot <- plateHeatmap + 
+  geom_tile(aes(fill=U.median), colour = "white") +
+  labs(fill="Intensity", alpha="Control") +
+  scale_alpha_manual(values=c(1,1,1)) + 
+  guides(alpha = guide_legend(override.aes = list(colour="black", pch=16)))
 
-#legend <- g_legend(legendplot)
+legend <- g_legend(legendplot)
 
-#chip_heatmaps <- grid.arrange(plot1, plot2, legend, ncol=3, widths=c(3/7, 3/7, 1/7))
-#ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "png")
+chip_heatmaps <- grid.arrange(plot1, plot2, legend, ncol=3, widths=c(3/7, 3/7, 1/7))
+ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "pdf")
 
-###################
+
 ```
+
 
 # Bisulphite Conversion
 
@@ -202,6 +203,19 @@ ggplot(QCmetrics, aes(x = BsCon))+
 ```
 
 `r sum(!QCmetrics$BsConPass)` samples fail at an intensity threshold of `r bsConThresh`
+
+
+# P filter 
+
+```{r, pfilt, echo=FALSE}
+
+failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
+
+```
+
+`r length(failedProbes)` probes fail at a pvalue threshold of `r pFiltProbeThresh` in more than `r pFiltSampleThresh`% of samples
+
+
 
 
 
@@ -222,22 +236,22 @@ densityPlot(betas, main = "Passed Samples", sampGroups = QCmetrics$PassQC1)
 
 ```{r, echo = FALSE, fig.width = 10, fig.height = 10}
 
-colsToKeep <- c(c(c("M.median","U.median","BsCon", "pFiltPass", "Cell_Type", "Batch", "DummyGroup",
-                    "Age","Sex", "Pathology"),
-                  colnames(QCmetrics)[grep("PC", colnames(QCmetrics))]))
+colsToKeep <- c("M.median","U.median","BsCon", "pFiltPass", plotVars,
+                  colnames(QCmetrics)[grep("PC", colnames(QCmetrics))])
 
 colsToKeep <- colsToKeep[colsToKeep %in% colnames(QCmetrics)]
 
 corDF <- QCmetrics[,colsToKeep]
 
 # change to correct type
-if(ctCheck){corDF$Cell_Type <- as.numeric(as.factor(corDF$Cell_Type))}
-if("Batch" %in% colnames(sampleSheet)){
-  corDF$Batch <- as.numeric(as.factor(corDF$Batch))
+
+for(i in colsToKeep){
+  if(!is.numeric(QCmetrics[,i])){
+   corDF[,i] <- as.numeric(as.factor(corDF[,i]))
+  } 
 }
-if("Sex" %in% colnames(sampleSheet)){
-  corDF$Sex <- as.numeric(as.factor(corDF$Sex))
-}
+
+
 
 corrplot::corrplot(cor(corDF, use = "p"))
 
