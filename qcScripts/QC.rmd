@@ -262,6 +262,9 @@ corrplot::corrplot(cor(corDF, use = "p"))
 ```
 
 
-
 ```{r, child=if (ctCheck) 'rmarkdownChild/ctCheck.rmd'}
+```
+
+
+```{r, child=if (tissueCheck) 'rmarkdownChild/tissueCheck.rmd'}
 ```

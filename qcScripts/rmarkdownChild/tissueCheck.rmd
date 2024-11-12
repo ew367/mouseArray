@@ -1,0 +1,144 @@
+# 10 Tissue Type Check
+
+n.b this check is run on passed QC stage 1 samples only and is provided for information only. It does NOT exlude any further samples prior to normalisation.
+
+```{r tCheckSetup, include=FALSE}
+library(ENmix)
+library(pheatmap)
+library(pander)
+library(RColorBrewer)
+library(kableExtra)
+library(data.table)
+
+# load manifest
+
+refDir <- args[3]
+refDir <- "/lustre/home/ew367/mouseArray/"
+manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
+
+man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
+
+## filter samples
+QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
+#QCSum <- na.omit(QCSum)
+passQC <- QCSum$Basename[QCSum$PassQC1]
+load(file = file.path(QCDir, "QCmetrics.rdat"))
+
+nStart<-nrow(QCSum)
+nExclude<-sum(!QCSum[,"PassQC1"])
+
+#nCTStart<-table(QCmetrics$Tissue_Type)
+
+QCmetrics<-QCmetrics[match(passQC, QCmetrics$Basename),]
+
+#nCTMid<-table(QCmetrics$tissueType)
+
+#tCounts<-cbind(nCTStart, nCTMid)
+#colnames(tCounts)<-c("Profiled", "PassQCStage1")
+
+
+# get betas, match to passed samples only and subset to just auto probes
+load(file = file.path(QCDir, "mraw.rdat"))
+betas <- getB(mraw)
+rawbetas<-betas[,match(passQC, colnames(betas))]
+auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
+rawbetas<-rawbetas[row.names(rawbetas) %in% auto.probes,]
+
+# calculate betas.scores
+pca <- prcomp(t(rawbetas))
+betas.scores = pca$x
+colnames(betas.scores) = paste(colnames(betas.scores), '_betas', sep='')
+betas.pca<-pca$sdev^2/sum(pca$sdev^2)
+betas.scores<-betas.scores[,which(betas.pca > 0.01)]
+
+
+
+tissueTypes<-sort(unique(QCmetrics$Tissue_Type))
+tissueCols<-brewer.pal(n = length(tissueTypes), name = "Paired")
+tissueColsTrans<-rgb(t(col2rgb(tissueCols)), max = 255, alpha = 0.5)
+#tissueCols<-c("darkgreen", "darkblue", "darkmagenta", "deeppink", "darkgray", "black", "yellowgreen", "orangered4")
+
+## filter out NAs
+rawbetas<-na.omit(rawbetas)
+
+## filter out SNPs
+if(length(grep("rs", rownames(rawbetas))) > 0){
+  rawbetas<-rawbetas[-grep("rs", rownames(rawbetas)),]
+}
+
+sample_anno<-QCmetrics[,c("Age","Sex", "Tissue_Type")[c("Age","Sex", "Tissue_Type") %in% colnames(QCmetrics)]]
+if("Age" %in% colnames(sample_anno)){
+  sample_anno$Age<-as.numeric(sample_anno$Age)
+}
+rownames(sample_anno)<-QCmetrics$Basename
+
+sample_anno<-sample_anno[,colSums(!is.na(sample_anno))> 0, drop=F]
+
+sigma<-apply(rawbetas, 1, sd)
+
+
+
+```
+
+# Summary of Quality Control 
+
+After performing quality control (QC) across all samples (n = `r nStart`), `r nExclude`  samples were excluded after stages 1 and 2 of the QC. 
+The third stage of the QC pipeline will look to establish the success of the FACs sorting and check whether samples cluster by their labelled tissue type. 
+
+```{r, echo = FALSE}
+
+#kbl(tCounts) %>%
+  #kable_styling(bootstrap_options = c("striped", "hover"),font_size = 10)
+
+```
+
+
+# Quality Control: Clustering of Tissue Types
+
+## Initial Visualisation 
+
+First, we will produce a heatmap and hierarchical cluster across all samples that passed stages 1 and 2 of the QC to gauge how cleanly the tissue-types are clustering. The following heatmap is on based on 500 most variable autosomal probes (ranked by SD), we will force it to cut the hierarchical cluster into the same number of groups as tissue types. 
+
+```{r hclustBefore, fig.width = 15, fig.height = 8, echo = FALSE}
+## initial cluster
+pheatmap(rawbetas[order(sigma, decreasing = TRUE)[1:500],], annotation_col = sample_anno,  show_colnames = FALSE, show_rownames = FALSE, cutree_cols = length(tissueTypes), main = "Pre Sample Type Filtering")
+
+
+```
+
+
+## Principal Component Analysis
+
+We will use principal components to classify samples into tissue types and determine if the profile of the sample is representative of the sample it is labelled as. The figure below shows the PCA before any checking of tissue type.
+
+```{r PCAbefore, fig.width = 15, fig.height = 8, echo = FALSE}
+par(mfrow = c(1,2))
+par(mar = c(4,4,0.5,0.5))
+plot(betas.scores[,1], betas.scores[,2],col = tissueCols[as.factor(QCmetrics$Tissue_Type)], pch = 16, xlab = "PC1", ylab = "PC2", cex.axis = 1.5, cex.lab = 1.5)
+
+plot(betas.scores[,3], betas.scores[,4],col = tissueCols[as.factor(QCmetrics$Tissue_Type)], pch = 16, xlab = "PC3", ylab = "PC4", cex.axis = 1.5, cex.lab = 1.5)
+
+legend("bottomright", pch = 16, col = tissueCols, levels(as.factor(QCmetrics$Tissue_Type)))
+
+```
+
+
+We will also visualize which axes of variation separate the different tissue types. Note that at this stage, we haven't filtered out any incorrectly labelled samples so there may still be some noise.
+
+```{r PCAboxplot,fig.width = 15, fig.height = 15, echo = FALSE}
+par(mfrow = c(3,2))
+par(mar = c(6,4,0.5,0.5))
+par(mgp = c(2,0.75,0))
+for(i in 1:ncol(betas.scores)){
+  
+  boxplot(betas.scores[,i] ~ QCmetrics$Tissue_Type, col = tissueCols, ylab = paste0("PC", i), xlab = "", cex.lab = 1.5, cex.axis = 1.5, xaxt = "n")
+  text(x = 1:length(tissueTypes),
+     y = par("usr")[3] - diff(par("usr")[3:4])*0.05,
+     labels = tissueTypes,
+     xpd = NA,
+     ## Rotate the labels by 35 degrees.
+     srt = 35,
+     cex = 1.2, adj = 1)
+  
+}
+```

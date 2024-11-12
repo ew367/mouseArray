@@ -1,26 +1,25 @@
 ---
 
+# 10 Cell Type Check
+
+
 ```{r ctSetup, include=FALSE}
-#args<-commandArgs(trailingOnly = TRUE)
 library(ENmix)
 library(pheatmap)
 library(pander)
 library(RColorBrewer)
 library(kableExtra)
 library(data.table)
-library(ENmix)
-
-
-
-source("config.r")
-
 
 # load manifest
+
+refDir <- args[3]
+manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
 
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
 ## filter samples
-QCmetrics<-read.csv(paste0(qcOutFolder,"/QCMetricsPostCellTypeClustering.csv"), stringsAsFactors = FALSE)
+QCmetrics<-read.csv(paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"), stringsAsFactors = FALSE)
 load("2_normalised/QC/PCAAcrossAllCellTypes.rdata")
 
 
@@ -118,10 +117,6 @@ plot(betas.scores[,1], betas.scores[,2],col = cellCols[as.factor(QCmetrics$Cell_
 plot(betas.scores[,3], betas.scores[,4],col = cellCols[as.factor(QCmetrics$Cell_Type)], pch = 16, xlab = "PC3", ylab = "PC4", cex.axis = 1.5, cex.lab = 1.5)
 
 legend("bottomright", pch = 16, col = cellCols, levels(as.factor(QCmetrics$Cell_Type)))
-
-
-
-
 
 ```
 
@@ -376,7 +371,6 @@ cellSDPCA<-as.matrix(t(cellSDPCA[,-1]))
 lowerBound<-cellMeanPCA-nSDThres*cellSDPCA
 upperBound<-cellMeanPCA+nSDThres*cellSDPCA
 
-
 ```
 
 Given the overlap of different cell types, we define a regular polytope in 2 dimensional space for each cell type. The centre of each polytope is calculated as the mean of the PCs. The polytope then extends `r nSDThres` SD away from the mean in all dimensions. The geometric position of each sample is compared to each of these regions and if it falls within a polytope it is considered to be representative of that cell type. As it is possible that the regions for two cell types will overlap, a cell type is labelled with all the cell types it overlaps with.  With this approach, a sample may fall outside of all cell types and therefore remain unassigned.  
@@ -400,7 +394,6 @@ To visualize how stringent this filtering is.
 ```{r, fig.width = 12, fig.height = 18}
 
 ## add thresholds more relaxed than selected
-
 
 lowerBound1<-cellMeanPCA-(nSDThres+0.5)*cellSDPCA
 upperBound1<-cellMeanPCA+(nSDThres+0.5)*cellSDPCA

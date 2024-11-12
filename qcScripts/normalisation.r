@@ -53,12 +53,12 @@ man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 # load QCmetrics and QC summary to remove failed samples
 if(ctCheck){
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage3AllSamples.csv"), stringsAsFactors = F)
-  QCSum <- na.omit(QCSum)
+  #QCSum <- na.omit(QCSum)
   passQC <- QCSum$Basename[QCSum$passQCS3]
   load(file = file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
 } else {
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
-  QCSum <- na.omit(QCSum)
+  #QCSum <- na.omit(QCSum)
   passQC <- QCSum$Basename[QCSum$PassQC1]
   load(file = file.path(QCDir, "QCmetrics.rdat"))
 }

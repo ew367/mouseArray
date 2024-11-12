@@ -56,7 +56,7 @@ Rscript calcMouseMethQCmetrics.r $DATADIR $REFDIR
 Rscript cellTypeChecks.r $DATADIR
 
 # create QC report
-Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR
+Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR $REFDIR
 
 # mv markdown report to correct location
 mv QC.html ${NORMDIR}/QC
