@@ -56,6 +56,12 @@ library(data.table)
 # N.B. Clustering is only performed on samples that have passed the following:
 # intensity, pfilt and bscon checks
 
+refDir <- args[2]
+
+manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
+normDir <- paste0(dataDir, "2_normalised")
+QCDir <- paste0(normDir, "/QC")  
+
 # these files are not currently filtered...
 load(file = file.path(QCDir, "mraw.rdat"))
 betas <- getB(mraw)
