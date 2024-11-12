@@ -68,6 +68,8 @@ if(exists("empty")){
 if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
   print("Loading rgSet")
   load(file = file.path(QCDir, "rgSet.rdat"))
+  rgSet <- rgSet[,sampleSheet$Basename]
+  print(paste0(ncol(rgSet), " samples loaded"))
 } else{
   rgSet <- readidat(path = idatPath, manifestfile=manifest ,recursive = TRUE)
   save(rgSet, file=file.path(QCDir, "rgSet.rdat"))
@@ -286,5 +288,6 @@ save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
 write.csv(QCSum, file.path(QCDir, "passQCStatusStage1AllSamples.csv"), row.names = F)
 
 print("QC objects created and saved")
+
 
 
