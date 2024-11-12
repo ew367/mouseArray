@@ -14,28 +14,24 @@ library(data.table)
 # load manifest
 
 refDir <- args[3]
+#refDir <- "/lustre/home/ew367/mouseArray"
 manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
 
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
 ## filter samples
-QCmetrics<-read.csv(paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"), stringsAsFactors = FALSE)
-load("2_normalised/QC/PCAAcrossAllCellTypes.rdata")
-
-
-QCSum<-QCmetrics[, c("Basename", "Individual_ID", "Sample_ID", "Cell_Type",
-                     "IntensityPass", "PfiltPass", "BsConPass", "sexPass",
-                     "PassQC1")]
-
-
+QCSum<-read.csv(paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"), stringsAsFactors = FALSE)
 passQC<-QCSum$Basename[QCSum[,"PassQC1"]]
+
+load(paste0(QCDir, "/PCAAcrossAllCellTypes.rdata"))
+
 
 nStart<-nrow(QCSum)
 nExclude<-sum(!QCSum[,"PassQC1"])
 
 nCTStart<-table(QCmetrics$Cell_Type)
 
-QCmetrics<-QCmetrics[match(passQC, QCmetrics$Basename),]
+QCmetrics<-QCSum[match(passQC, QCmetrics$Basename),]
 
 nCTMid<-table(QCmetrics$Cell_Type)
 
@@ -203,7 +199,7 @@ For individuals, where the FACs sorting did not generate distinct cellular popul
 For each sample we can determine how similar it is to the average profile for the labelled cell type. We can combine the sample level scores into an individual level score, which is used to rank the FACs sorting. Below we will visualise the individual level FAC efficiency scores. 
 
 ```{r}
-uniqueIDs<-read.csv(paste0(qcOutFolder, "/IndividualFACsEffciencyScores.csv"), row.names = 1, stringsAsFactors = FALSE)
+uniqueIDs<-read.csv(paste0(QCDir, "/IndividualFACsEffciencyScores.csv"), row.names = 1, stringsAsFactors = FALSE)
 
 #boxplot(uniqueIDs$FACsEffiency ~ uniqueIDs$Tissue.Centre, xlab = "", ylab = "Median SD from mean")
 #abline(h=nSDThres)
@@ -475,7 +471,7 @@ boxplot(QCmetrics$BsCon ~ QCmetrics$predLabelledCellType, ylab = "Bisulfite Cove
 
 
 ```{r, fig.width = 15, fig.height = 15, echo = FALSE}
-QCSum<-read.csv(paste0(projDir, "/2_normalised/QC/passQCStatusStage3AllSamples.csv"), row.names = 1)
+QCSum<-read.csv(paste0(dataDir, "/2_normalised/QC/passQCStatusStage3AllSamples.csv"), row.names = 1)
 passQC<-QCSum$Basename[QCSum[,"passQCS3"]]
 
 QCmetrics<-QCmetrics[match(colnames(rawbetas), QCmetrics$Basename),]

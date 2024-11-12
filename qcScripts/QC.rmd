@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[2]
-dataDir <- "/lustre/projects/Research_Project-191406/ARRand5xFAD/"
+dataDir <- "/lustre/projects/Research_Project-191406/cellSortedEWAS/"
 print(dataDir)
 
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
