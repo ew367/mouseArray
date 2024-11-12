@@ -1,14 +1,11 @@
 
+# Sex Check
+
 `r sum(!is.na(QCmetrics$Sex))` (`r sum(!is.na(QCmetrics$Sex))/nrow(QCmetrics)*100`%) samples have sex provided in the phenotype file for comparison with predicted sex. We will compare the sex predictions to that provided in the phenotype file. 
 
 `r sum(as.character(QCmetrics$predSex) != as.character(QCmetrics$Sex))` (`r sum(as.character(QCmetrics$predSex) != as.character(QCmetrics$Sex))/nrow(QCmetrics)*100`%) samples have sex predictions that do not match the sex provided in the phenotype file.
 
 ```{r tabSexReported, echo = FALSE, eval = sexCheck}
-
-# note this script is adapted from the one in brainFans
-# https://github.com/ejh243/BrainFANS/blob/master/array/DNAm/preprocessing/rmarkdownChild/sexCheck.rmd
-
-pander(table(QCmetrics$predSex, QCmetrics$Sex))
 
 write.csv(QCmetrics[which(as.character(QCmetrics$predSex) != as.character(QCmetrics$Sex)),], paste0(dataDir, "/2_normalised/QC/SexMismatches.csv"), row.names = FALSE)
 ``` 
