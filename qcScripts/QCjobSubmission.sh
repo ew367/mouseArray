@@ -53,7 +53,7 @@ module load Pandoc
 Rscript calcMouseMethQCmetrics.r $DATADIR $REFDIR
 
 # run cluster cell types script
-Rscript cellTypeChecks.r $DATADIR
+Rscript cellTypeChecks.r $DATADIR $REFDIR
 
 # create QC report
 Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR $REFDIR
