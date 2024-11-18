@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[2]
 dataDir <- "/lustre/projects/Research_Project-191406/cellSortedEWAS/"
-print(dataDir)
+print(paste0("Data directory is: ", dataDir))
 
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 library(ggplot2)
@@ -64,8 +64,6 @@ An object of class ENmix::rgDataSet was made using the ENmix package and is load
 
 ```{r, load QCmetrics,  warning=FALSE, message=FALSE, echo = FALSE}
 
-print(QCDir)
-
 load(file = paste0(QCDir, "/rgSet.rdat"))
 load(file = paste0(QCDir, "/QCmetrics.rdat"))
 load(file = paste0(QCDir, "/detP.rdat"))
@@ -78,14 +76,9 @@ betas <- getB(mraw)
 # define variables to plot
 plotVars <- c(projVar, "Chip_ID")
 
-# add column for neun and non neun celltypes
-if(ctCheck){
-  QCmetrics$NeuN <- ifelse(QCmetrics$Cell_Type == "NEUN", "NEUN", "OTHER")
-}
-
 QCmetrics$Chip_ID <- as.character(QCmetrics$Chip_ID)
 
-# make sure age is numeric if it ia in the sample sheet
+# make sure age is numeric if it is in the sample sheet
 if("Age" %in% colnames(QCmetrics)){
   QCmetrics$Age <- as.numeric(QCmetrics$Age)
 }
