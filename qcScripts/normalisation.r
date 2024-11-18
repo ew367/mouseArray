@@ -22,6 +22,7 @@
 
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[1]
+refDir <- args[2]
 
 print("loading packages...")
 library(data.table)
@@ -32,6 +33,7 @@ setwd(dataDir)
 
 normDir <- "2_normalised"
 QCDir <- "2_normalised/QC"
+manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
 
 
 source("config.r")
@@ -54,12 +56,12 @@ man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 if(ctCheck){
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage3AllSamples.csv"), stringsAsFactors = F)
   #QCSum <- na.omit(QCSum)
-  passQC <- QCSum$Basename[QCSum$passQCS3]
+  passQC <- na.omit(QCSum$Basename[QCSum$passQCS3])
   load(file = file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
 } else {
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
   #QCSum <- na.omit(QCSum)
-  passQC <- QCSum$Basename[QCSum$PassQC1]
+  passQC <- na.omit(QCSum$Basename[QCSum$PassQC1])
   load(file = file.path(QCDir, "QCmetrics.rdat"))
 }
 
@@ -96,8 +98,11 @@ mrawPass <- mraw[row.names(betas), colnames(betas)]
 
 
 #----------------------------------------------------------------------#
-# NORMALISE (WITHIN CELL TYPE FOR CELL SORTED DATA)
+# NORMALISE 
 #----------------------------------------------------------------------#
+
+# WITHIN CELL TYPE FOR CELL SORTED DATA
+# WITHIN TISSUE FOR DATA FROM MULTIPLE TISSUES
 
 #### This needs to be checked still!!
 ## also make sure that cols/rows are in same order before saving
@@ -120,8 +125,24 @@ if(ctCheck){
   
   save(celltypeNormbeta, QCmetrics,  file = file.path(normDir, "normalisedData.rdat"))
   print("normalised QC object saved")
-} else{
-  print("normalising bulk tissue...")
+} else if (tissueCheck){
+  print("normalising within tissue...")
+  tissueTypes<-unique(QCmetrics$Tissue_Type)
+
+  tissueNormbeta<-matrix(NA, nrow = nrow(assays(mrawPass)$Meth), ncol = ncol(assays(mrawPass)$Meth))
+  rownames(tissueNormbeta)<-rownames(betas)
+  colnames(tissueNormbeta)<-colnames(betas)
+  for(each in tissueTypes){
+    print(each)
+    index<-which(QCmetrics$Tissue_Type == each)
+    if(length(index) > 2){
+      tissueNormbeta[,index]<-as.matrix(adjustedDasen(mns = assays(mrawPass)$Meth[,index], uns = assays(mrawPass)$Unmeth[,index], onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr))
+    }
+  }
+  save(tissueNormbeta, QCmetrics,  file = file.path(normDir, "normalisedData.rdat"))
+  print("normalised QC object saved")
+  } else {
+    print("normalising bulk tissue...")
   normBeta <- adjustedDasen(mns = assays(mrawPass)$Meth, uns = assays(mrawPass)$Unmeth, onetwo = mrawPass@elementMetadata$Infinium_Design_Type, chr = mrawPass@elementMetadata$chr, cores=1)
   if(identical(colnames(normBeta), QCmetrics$Basename)){
     save(normBeta, QCmetrics, file = file.path(normDir, "normalisedData.rdat"))
