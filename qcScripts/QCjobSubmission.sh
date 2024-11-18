@@ -59,10 +59,10 @@ Rscript cellTypeChecks.r $DATADIR $REFDIR
 Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR $REFDIR
 
 # mv markdown report to correct location
-mv QC.html ${NORMDIR}/QC
+mv QC.html $DATADIR/2_normalised/QC
 
 # run normalisation script
-Rscript normalisation.r $DATADIR
+Rscript normalisation.r $DATADIR $REFDIR
 
 
 ## print finish date and time
