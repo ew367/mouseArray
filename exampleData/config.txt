@@ -1,6 +1,8 @@
 ## Data filepaths
+# n.b. filepaths must end with a "/"
 
-export DATADIR=/filepath/to/project/folder
-export SCRIPTSDIR=/filepath/to/scripts/folder/qcScripts
+export DATADIR=example/
+export SCRIPTSDIR=qcScripts/
+export REFDIR=mouseArray/
 
-export RVERS=R/4.2.1-foss-2022a
+export RVERS=R/4.3.2-gfbf-2023a
