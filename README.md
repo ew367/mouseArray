@@ -46,7 +46,7 @@ sh QCjobSubmission.sh <filepath/to/projectFolder> (local machine)
 
 This script will execute:
 * Rscript calcMouseMethQCmetrics.r $DATADIR $REFDIR
-* 
+* Rscript cellTypeChecks.r $DATADIR $REFDIR (if requested in the config.r file)
 * Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $1
 * Rscript cellTypeChecks.r $DATADIR $REFDIR
 * Rscript -e "rmarkdown::render('QC.rmd', output_file='QC.html')" --args $DATADIR $REFDIR
