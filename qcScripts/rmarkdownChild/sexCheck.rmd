@@ -1,0 +1,14 @@
+
+# Sex Check
+
+`r sum(!is.na(QCmetrics$Sex))` (`r sum(!is.na(QCmetrics$Sex))/nrow(QCmetrics)*100`%) samples have sex provided in the phenotype file for comparison with predicted sex. We will compare the sex predictions to that provided in the phenotype file. 
+
+`r sum(as.character(QCmetrics$predSex) != as.character(QCmetrics$Sex))` (`r sum(as.character(QCmetrics$predSex) != as.character(QCmetrics$Sex))/nrow(QCmetrics)*100`%) samples have sex predictions that do not match the sex provided in the phenotype file.
+
+```{r tabSexReported, echo = FALSE, eval = sexCheck}
+
+write.csv(QCmetrics[which(as.character(QCmetrics$predSex) != as.character(QCmetrics$Sex)),], paste0(dataDir, "/2_normalised/QC/SexMismatches.csv"), row.names = FALSE)
+``` 
+
+
+Samples where predicted sex is inconsistent with reported sex are written to the file SexMismatches.csv.

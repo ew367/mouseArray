@@ -1,23 +1,23 @@
+# Example cell sorted data
 
-# filepaths
-manifest <- ("0_metadata/MouseMethylation-12v1-0_A2.csv")
-
-# project specific parmeters - must include "Sex" and "Cell_Type" to run optional checks below
-projVar <- c("Genotype", "Chip_Location", "Sex", "Age") 
-
-# empty <- "" # basenames of any sample to exclude here
+# project specific parmeters - must include "Sex" and/or "Cell_Type" and/or "Tissue_Type" to run optional checks below
+projVar <- c("Sex", "Age", "Plate", "Batch", "Individual_ID", "N_Nuclei", "Pathology", "Cell_Type") 
 
 
-# optional checks
-ctCheck = FALSE
-sexCheck = FALSE
+# optional checks (note cannot have both CT and Tissue checks set to TRUE)
+ctCheck = TRUE
+sexCheck = TRUE
+tissueCheck = FALSE
 
 
 # calcMouseMethMetrics thresholds
 intensThresh <- 2000
 pFiltProbeThresh <- 0.05
 pFiltSampleThresh <- 5
-bsThresh <- 2
 bsConThresh <- 90
 
-
+# ctCheck thresholds
+neunCT <- "NEUNpos"
+predDistinctCT<-c("NEUNpos", "NEUNneg")
+studentThres <- 1.5
+nSDThres<-3

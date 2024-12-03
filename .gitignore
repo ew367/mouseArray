@@ -5,6 +5,7 @@
 *.png
 *.pdf
 *.jpeg
+*.svg
 
 #csv files
 *.csv

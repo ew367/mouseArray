@@ -24,6 +24,7 @@
 
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[1]
+refDir <- args[2]
 
 print("loading packages...")
 
@@ -38,6 +39,7 @@ library(data.table)
 
 setwd(dataDir)
 
+manifest <- file.path(refDir, "MouseMethylation-12v1-0_A2.csv")
 pheno <- "0_metadata/sampleSheet.csv"
 idatPath <- "1_raw"
 normDir <- "2_normalised"
@@ -66,6 +68,8 @@ if(exists("empty")){
 if(file.exists(file = file.path(QCDir, "rgSet.rdat"))){
   print("Loading rgSet")
   load(file = file.path(QCDir, "rgSet.rdat"))
+  rgSet <- rgSet[,sampleSheet$Basename]
+  print(paste0(ncol(rgSet), " samples loaded"))
 } else{
   rgSet <- readidat(path = idatPath, manifestfile=manifest ,recursive = TRUE)
   save(rgSet, file=file.path(QCDir, "rgSet.rdat"))
@@ -112,40 +116,6 @@ QCmetrics <- left_join(sampleSheet, M, by = "Basename")
 QCmetrics <- left_join(QCmetrics, U, by = "Basename")
 
 QCmetrics$IntensityPass <- ifelse(QCmetrics$M.median > 2000 & QCmetrics$U.median > 2000, TRUE, FALSE)
-
-
-
-#----------------------------------------------------------------------#
-# P FILTER
-#----------------------------------------------------------------------#
-
-if(file.exists(file = file.path(QCDir, "detP.rdat"))){
-  print("Loading detP object")
-  load(file = file.path(QCDir, "detP.rdat"))
-} else{
-  detP <- calcdetP(rgSet)
-  save(detP, file=file.path(QCDir, "detP.rdat"))
-  print("detP object created and saved")
-}
-
-
-# check if any samples have > 1 percent of probes with a detection p value of > pFiltThresh
-pfiltdf <- data.frame(matrix(ncol = 2, nrow = nrow(QCmetrics)))
-colnames(pfiltdf) <- c("Basename", "PercProbesFail")
-
-for(i in 1:ncol(detP)){
-  pfiltdf$Basename[i] <- colnames(detP)[i]
-  pfiltdf$PercProbesFail[i] <- sum(detP[,i] > pFiltProbeThresh)/nrow(detP)*100
-}
-
-pfiltdf$PfiltPass <- ifelse(pfiltdf$PercProbes < 1, TRUE, FALSE)
-
-QCmetrics <- left_join(QCmetrics, pfiltdf, by = "Basename")
-
-
-# check if any probes fail in more than pFiltSampleThresh of samples
-failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
-
 
 
 #----------------------------------------------------------------------#
@@ -196,6 +166,43 @@ print("bsCon object created and saved")
 QCmetrics$BsCon <- BSconAll["BScon.med",]
 QCmetrics$BsConPass <- ifelse(QCmetrics$BsCon > bsConThresh, TRUE, FALSE)
   
+
+
+#----------------------------------------------------------------------#
+# P FILTER
+#----------------------------------------------------------------------#
+
+if(file.exists(file = file.path(QCDir, "detP.rdat"))){
+  print("Loading detP object")
+  load(file = file.path(QCDir, "detP.rdat"))
+} else{
+  detP <- calcdetP(rgSet)
+  save(detP, file=file.path(QCDir, "detP.rdat"))
+  print("detP object created and saved")
+}
+
+
+# check if any samples have > 1 percent of probes with a detection p value of > pFiltThresh
+pfiltdf <- data.frame(matrix(ncol = 2, nrow = nrow(QCmetrics)))
+colnames(pfiltdf) <- c("Basename", "PercProbesFail")
+
+for(i in 1:ncol(detP)){
+  pfiltdf$Basename[i] <- colnames(detP)[i]
+  pfiltdf$PercProbesFail[i] <- sum(detP[,i] > pFiltProbeThresh)/nrow(detP)*100
+}
+
+pfiltdf$PfiltPass <- ifelse(pfiltdf$PercProbes < 1, TRUE, FALSE)
+
+QCmetrics <- left_join(QCmetrics, pfiltdf, by = "Basename")
+
+
+# check if any probes fail in more than pFiltSampleThresh of samples
+# samples with low intensity/bscon values or fail pfilt sample check above are excluded first
+
+goodsamps <- QCmetrics$IntensityPass & QCmetrics$BsConPass > bsConThresh & QCmetrics$PfiltPass
+detP <- detP[,goodsamps]
+failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
+save(failedProbes, file = file.path(QCDir, "failedProbes.rdat"))
 
 
 #----------------------------------------------------------------------#
@@ -281,5 +288,6 @@ save(QCmetrics, file=file.path(QCDir, "QCmetrics.rdat"))
 write.csv(QCSum, file.path(QCDir, "passQCStatusStage1AllSamples.csv"), row.names = F)
 
 print("QC objects created and saved")
+
 
 
