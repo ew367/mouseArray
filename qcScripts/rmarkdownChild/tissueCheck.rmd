@@ -87,8 +87,8 @@ The third stage of the QC pipeline will look to establish the success of the FAC
 
 ```{r, echo = FALSE}
 
-#kbl(tCounts) %>%
-  #kable_styling(bootstrap_options = c("striped", "hover"),font_size = 10)
+kbl(tCounts) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"),font_size = 10)
 
 ```
 

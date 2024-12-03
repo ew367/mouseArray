@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #SBATCH --export=ALL #export all enviroment variables to the batch job
 #SBATCH -p mrcq #submit to the serial queue
@@ -15,7 +16,7 @@
 
 # 1. command line argument input is your config.txt file
 
-# e.g. to run sbatch QCjobSubmission.sh <filepath/to/projectFolder>
+# e.g. to run sbatch QCjobSubmission.sh <filepath/to/projectDirectory>
 
 #-----------------------------------------------------
 
@@ -29,7 +30,7 @@ echo Job sumbitted from:
   echo $SLURM_SUBMIT_DIR
 
 #load config.txt file
-source $1 || exit 1
+source ${1}/config.txt || exit 1
 
 # create directry for QC and normalised data
 NORMDIR=${DATADIR}/2_normalised
