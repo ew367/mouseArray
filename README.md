@@ -21,8 +21,8 @@ PREQUISITES:
 * A file named sampleSheet.csv in the 0_metadata folder which contains the following columns, along with any other (optional) associated phenotype data (see exampleData/sampleSheet.csv):
     "Basename","Chip_ID","Chip_Position", "Individual_ID","Sample_ID".
     
-  To run cell type checks a "Cell_Type" column must be included.
-  To run sex check a "Sex" column must be included.
+  To run cell type checks a "Cell_Type" column must be included. \n
+  To run sex check a "Sex" column must be included. \n
   To run tissue check a "Tissue_Type" column must be included.
 
 * A manifest file (e.g. MouseMethylation-12v1-0_A2.csv) in the REFDIR directory (specified in the config.txt file)
