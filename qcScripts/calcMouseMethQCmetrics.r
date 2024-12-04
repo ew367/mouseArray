@@ -44,9 +44,20 @@ pheno <- "0_metadata/sampleSheet.csv"
 idatPath <- "1_raw"
 normDir <- "2_normalised"
 QCDir <- "2_normalised/QC"
+configFile <- paste0(dataDir, "config.r") 
 
 
-source("config.r")
+# load config.r
+if (file.exists(configFile)) {
+  source(configFile)
+} else {
+  stop("config.r file does not exist.")
+}
+
+# load sampleSheet
+if (!file.exists(pheno)) {
+  stop("Phenotype file not found at ", pheno)
+}
 
 
 # load manifest
@@ -60,7 +71,11 @@ if(exists("empty")){
   sampleSheet <- sampleSheet[!sampleSheet$Basename %in% empty,]
 }
 
-
+for(i in projVar){
+  if(is.character(sampleSheet[,i])){
+    sampleSheet[,i] <- trimws(sampleSheet[,i])
+  }
+}
 #----------------------------------------------------------------------#
 # LOAD IDATS TO RGSET
 #----------------------------------------------------------------------#
