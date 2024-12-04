@@ -19,7 +19,8 @@ PREQUISITES:
 * A config.r file containg threshold values etc specific to your project (see exampleData/config.r for an example)
 
 * A file named sampleSheet.csv in the 0_metadata folder which contains the following columns, along with any other (optional) associated phenotype data (see exampleData/sampleSheet.csv):
-    "Basename","Chip_ID","Chip_Position", "Individual_ID","Sample_ID".
+
+  "Basename","Chip_ID","Chip_Position", "Individual_ID","Sample_ID".
     
   To run cell type checks a "Cell_Type" column must be included. \
   To run sex check a "Sex" column must be included. \
@@ -39,8 +40,8 @@ OUTPUT:
 
 The QCjobSubmission.sh script automates the quality control pipeline and can be run on the command line with:
 
-sbatch QCjobSubmission.sh <filepath/to/projectFolder> (slurm job submissions)
-or
+sbatch QCjobSubmission.sh <filepath/to/projectFolder> (slurm job submissions) \
+or \
 sh QCjobSubmission.sh <filepath/to/projectFolder> (local machine)
 
 
