@@ -192,7 +192,7 @@ ggplot(QCmetrics, aes(x = BsCon))+
 
 ```
 
-`r sum(!QCmetrics$BsConPass)` samples fail at an intensity threshold of `r bsConThresh`
+`r sum(!QCmetrics$BsConPass)` samples fail at a bisulphite conversion threshold of `r bsConThresh`
 
 
 # P filter 
