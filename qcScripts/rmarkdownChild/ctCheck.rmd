@@ -1,6 +1,6 @@
 ---
 
-# 10 Cell Type Check
+# Cell Type Check
 
 
 ```{r ctSetup, include=FALSE}
