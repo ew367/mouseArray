@@ -29,10 +29,17 @@
 
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[1]
+refDir <- args[2]
 
 setwd(dataDir)
 
-source("config.r")
+# load config.r
+if (file.exists(configFile)) {
+  source(configFile)
+} else {
+  stop("config.r file does not exist.")
+}
+
 
 if(!ctCheck){
 	quit(save = "no", status = 0)
@@ -56,44 +63,38 @@ library(data.table)
 # N.B. Clustering is only performed on samples that have passed the following:
 # intensity, pfilt and bscon checks
 
-refDir <- args[2]
+manifest <- file.path(refDir, "MouseMethylation-12v1-0_A2.csv")
+normDir <- file.path(dataDir, "2_normalised")
+QCDir <- file.path(normDir, "/QC")  
 
-manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
-normDir <- paste0(dataDir, "2_normalised")
-QCDir <- paste0(normDir, "/QC")  
 
-# these files are not currently filtered...
+# load unfiltered files
 load(file = file.path(QCDir, "mraw.rdat"))
-betas <- getB(mraw)
-
 load(file = file.path(QCDir, "QCmetrics.rdat"))
 
-man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
+# load manifest
+man <- fread(manifest, skip=7, fill=TRUE, data.table=F) # REPLACE WITH FUNCTION
+
+
+# load QCstage1 results
 QCSum <- read.csv(file.path(QCDir, "passQCStatusStage1AllSamples.csv"), stringsAsFactors = F)
-
 passQC<-QCSum$Basename[QCSum[,"PassQC1"]]
 
+
+# filter QCmetrics and betas matrix to passed samples only
 QCmetrics.all<-QCmetrics
 QCmetrics<-QCmetrics[match(passQC, QCmetrics$Basename),]
 
+betas <- getB(mraw)
 rawbetas<-betas[,match(passQC, colnames(betas))]
 
+
+# filter to autosomal probes and remove probes with NAs and SNPs
 auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
-
 rawbetas<-rawbetas[row.names(rawbetas) %in% auto.probes,]
-
-cellTypes<-unique(QCmetrics$Cell_Type)
-cellTypes<-cellTypes[!is.na(cellTypes)]
-cellTypes<-sort(cellTypes)
-
-# filter out NAs
 rawbetas<-na.omit(rawbetas)
-
-# filter out SNPs
 betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
-
-
 
 
 #----------------------------------------------------------------------#
@@ -107,6 +108,7 @@ betas.scores = pca$x
 colnames(betas.scores) = paste(colnames(betas.scores), '_betas', sep='')
 betas.pca<-pca$sdev^2/sum(pca$sdev^2)
 betas.scores<-betas.scores[,which(betas.pca > 0.01)]
+
 
 #----------------------------------------------------------------------#
 # IDENTIFY OUTLIERS
@@ -160,7 +162,7 @@ for(i in 1:nrow(QCmetrics)){
 # CALCULATE INDIVIDUAL FACS SCORE
 #----------------------------------------------------------------------#
 
-keepCols<-c("Individual_ID", "Sex", "Age", "Group", "Batch")
+keepCols<-c(projVar, "Chip_ID")
 keepCols<-keepCols[keepCols %in% colnames(QCmetrics)]
 uniqueIDs<-unique(QCmetrics[,keepCols])
 indFACSEff<-indFACSEff<-aggregate(maxSD[which(QCmetrics$Cell_Type != "Total")], by = list(QCmetrics$Individual_ID[which(QCmetrics$Cell_Type != "Total")]), FUN = median, na.rm = TRUE)

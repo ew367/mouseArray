@@ -1,6 +1,6 @@
 ---
 
-# 10 Cell Type Check
+# Cell Type Check
 
 
 ```{r ctSetup, include=FALSE}
@@ -73,10 +73,10 @@ sigma<-apply(rawbetas, 1, sd)
 
 ```
 
-# Summary of Quality Control 
+# Summary of Quality Control Stage 1
 
-After performing quality control (QC) across all samples (n = `r nStart`), `r nExclude`  samples were excluded after stages 1 and 2 of the QC. 
-The third stage of the QC pipeline will look to establish the success of the FACs sorting and check whether samples cluster by their labelled cell type. 
+After performing quality control (QC) across all samples (n = `r nStart`), `r nExclude`  samples were excluded after stage 1 of the QC. 
+This stage of the QC pipeline will look to establish the success of the FACs sorting and check whether samples cluster by their labelled cell type. 
 
 ```{r, echo = FALSE}
 
@@ -89,9 +89,9 @@ kbl(ctCounts) %>%
 
 # Quality Control: Clustering of Cell Types
 
-## Initial Visualisation 
+### Initial Visualisations
 
-First, we will produce a heatmap and hierarchical cluster across all samples that passed stages 1 and 2 of the QC to gauge how cleanly the cell-types are clustering. The following heatmap is on based on 500 most variable autosomal probes (ranked by SD), we will force it to cut the hierarchical cluster into the same number of groups as cell types. 
+Step 1 produces a heatmap and hierarchical cluster across all samples that passed stage 1 of the QC to gauge how cleanly the cell-types are clustering. The following heatmap is on based on 500 most variable autosomal probes (ranked by SD), with the hierarchical cluster cut into the same number of groups as cell types. 
 
 ```{r hclustBefore, fig.width = 15, fig.height = 8, echo = FALSE}
 ## initial cluster
@@ -100,9 +100,9 @@ pheatmap(rawbetas[order(sigma, decreasing = TRUE)[1:500],], annotation_col = sam
 
 ```
 
-## Principal Component Analysis
+### Principal Component Analysis
 
-We will use principal components to classify samples into cell types and determine if the profile of the sample is representative of the sample it is labelled as. The figure below shows the PCA before any checking of cell type.
+Principal components are used to classify samples into cell types and determine if the profile of the sample is representative of the sample it is labelled as. The figure below shows the PCA before any checking of cell type.
 
 ```{r PCAbefore, fig.width = 15, fig.height = 8, echo = FALSE}
 par(mfrow = c(1,2))
@@ -138,7 +138,7 @@ for(i in 1:ncol(betas.scores)){
 
 ## Confirmation of Cell-type membership
 
-In the following sections we will implement steps to confirm a sample clusters with it's group. As in general the samples cluster by cell type, we can use these data to do an internal prediction of what cell type each sample is most similar to. Given that the principal components parsimoneously capture the relevent axes of cell type variation, we will use them as the basis of this validation. To do this we need to "learn" the typical profile of each cell type. For this process to work we are assuming that a sufficiently high proportion of the samples are labelled correctly. In case there are any samples which are incorrectly labelled, that will distort the average profile, we  will first studentize the values to identify outliers for each cell type. These outliers will then be excluded from the calculation of the average profile for each cell type. 
+In the following sections we implement steps to confirm a sample clusters with it's group. As in general the samples cluster by cell type, we can use these data to do an internal prediction of what cell type each sample is most similar to. Given that the principal components parsimoneously capture the relevent axes of cell type variation, we will use them as the basis of this validation. To do this we need to "learn" the typical profile of each cell type. For this process to work we are assuming that a sufficiently high proportion of the samples are labelled correctly. In case there are any samples which are incorrectly labelled, that will distort the average profile, we  will first studentize the values to identify outliers for each cell type. These outliers will then be excluded from the calculation of the average profile for each cell type. 
 
 Below are boxplots of the within cell type studentized PCs. The dashed horizontal lines represent different possible thresholds.  Cell-type specific correlations, indicate this statistical method is working. It is worthwhile being stringent here such that we get an accurate representative profile that will enable us to more cleanly predict which cell type a sample is most similar to.  
 

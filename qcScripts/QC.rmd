@@ -63,27 +63,24 @@ Pipeline updated October 2024
 
 Data was loaded for `r nrow(QCmetrics)` samples from `r length(unique(QCmetrics$Individual_ID))` individuals.
 
-# Loading data
 
-An object of class ENmix::rgDataSet was made using the ENmix package and is loaded in alongside the sample sheet containing the pheno data for the mice, and QCmetrics object created by the calcMouseMethQCmetrics.r script
-
-
-```{r, load QCmetrics,  warning=FALSE, message=FALSE, echo = FALSE}
-
-
-
-betas <- getB(mraw)
+```{r, definePlotVars,  warning=FALSE, message=FALSE, echo = FALSE}
 
 # define variables to plot
 plotVars <- c(projVar, "Chip_ID")
 
-QCmetrics$Chip_ID <- as.character(QCmetrics$Chip_ID)
+# extract chip ID from basename as Excel often converts to scientific notation
+QCmetrics$Chip_ID <- as.character(substr(QCmetrics$Basename, 1, 12))
 
-# make sure age is numeric if it is in the sample sheet
+# ensure Individual_ID is factor
+QCmetrics$Individual_ID <- factor(QCmetrics$Individual_ID)
+
+# ensure age is numeric if provided
 if("Age" %in% colnames(QCmetrics)){
   QCmetrics$Age <- as.numeric(QCmetrics$Age)
 }
 
+# trim white space from character variables
 for(i in plotVars){
   if(is.character(QCmetrics[,i])){
     QCmetrics[,i] <- trimws(QCmetrics[,i])
@@ -99,7 +96,6 @@ The intensity check is often the biggest indicator of sample quality. The median
 `r sum(!QCmetrics$IntensityPass)` samples fail at an intensity threshold of `r intensThresh`
 
 
-# Intensity plots
 
 ```{r plotintensities, echo=FALSE, message=F}
 
@@ -132,7 +128,6 @@ for(i in plotVars){
     print(continuousIntensityPlots(QCmetrics, i))
   }
 }
-
 
 ```
 
@@ -179,7 +174,7 @@ legendplot <- plateHeatmap +
 legend <- g_legend(legendplot)
 
 chip_heatmaps <- grid.arrange(plot1, plot2, legend, ncol=3, widths=c(3/7, 3/7, 1/7))
-ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "pdf")
+#ggsave("Methylation_intensity_CHIP.png", chip_heatmaps, device = "pdf")
 
 
 ```
@@ -217,6 +212,7 @@ failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 
 
 ```{r density plots, echo = FALSE, message = F}
 
+betas <- getB(mraw)
 betas <- betas[, QCmetrics$Basename]
 
 densityPlot(betas, main = "All Betas")
@@ -226,7 +222,7 @@ densityPlot(betas, main = "Passed Samples", sampGroups = QCmetrics$PassQC1)
 
 
 
-# Correlations between QC metrics
+# Correlations between QC Metrics
 
 ```{r, echo = FALSE, fig.width = 10, fig.height = 10}
 
