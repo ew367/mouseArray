@@ -33,7 +33,7 @@ setwd(dataDir)
 
 normDir <- "2_normalised"
 QCDir <- "2_normalised/QC"
-manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
+manifest <- file.path(refDir, "MouseMethylation-12v1-0_A2.csv")
 
 
 source("config.r")
@@ -79,6 +79,7 @@ betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
 print("filtering flagged probes...")
 flagged.probes<-man$IlmnID[man$MFG_Change_Flagged == TRUE]
 betas <- betas[!row.names(betas) %in% flagged.probes,]
+
 
 #print("filtering sex and MT probes...")
 #auto.probes<-man$IlmnID[man$CHR != "X" & man$CHR != "Y" & man$CHR != "MT"]
