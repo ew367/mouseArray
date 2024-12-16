@@ -1,6 +1,5 @@
 ---
 title: "DNA methylation Illumina Mouse Array Quality Control Report"
-author: "Emma Walker"
 output: 
   html_document:
     toc: true
@@ -19,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[2]
 
+# load libraries
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 library(ggplot2)
 library(dplyr)
@@ -26,8 +26,7 @@ library(minfi)
 library(gridExtra)
 library(corrplot)
 
-
-pheno <- paste0(dataDir, "0_metadata/sampleSheet.csv")
+# define variables
 normDir <- paste0(dataDir, "2_normalised")
 QCDir <- paste0(normDir, "/QC")  
 configFile <- paste0(dataDir, "config.r") 
@@ -39,21 +38,17 @@ if (file.exists(configFile)) {
   stop("config.r file does not exist.")
 }
 
-# load sampleSheet
-if (!file.exists(pheno)) {
-  stop("Phenotype file not found at ", pheno)
-}
-
-sampleSheet <- read.csv(pheno, stringsAsFactors = F)
 
 ```
 
-# Introduction
-
-QC report for Mouse Data
+# QC report for Illumina Infinium Mouse Methylation Array Data
 
 Pipeline updated October 2024
 
+**Date of QC:** `r format(Sys.Date(), format="%d %B %Y")`
+**Project datapath:** `r dataDir`
+
+Data was loaded for `r nrow(QCmetrics)` samples from `r length(unique(QCmetrics$Individual_ID))` individuals.
 
 # Loading data
 
