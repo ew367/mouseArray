@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 args<-commandArgs(trailingOnly = TRUE)
 dataDir <- args[2]
 
+
 # load libraries
 library(ENmix) # #https://www.bioconductor.org/packages/devel/bioc/vignettes/ENmix/inst/doc/ENmix.pdf 
 library(ggplot2)
@@ -26,10 +27,13 @@ library(minfi)
 library(gridExtra)
 library(corrplot)
 
+
 # define variables
-normDir <- paste0(dataDir, "2_normalised")
-QCDir <- paste0(normDir, "/QC")  
-configFile <- paste0(dataDir, "config.r") 
+normDir <- file.path(dataDir, "2_normalised")
+QCDir <- file.path(normDir, "QC")  
+configFile <- file.path(dataDir, "config.r")
+
+
 
 # load config.r
 if (file.exists(configFile)) {
@@ -39,6 +43,15 @@ if (file.exists(configFile)) {
 }
 
 
+# load QCmetrics objects
+for(i in c("rgSet", "QCmetrics", "detP", "bsCon", "mraw")){
+  QCfile <- paste0(QCDir, "/", i, ".rdat")
+  if(file.exists(QCfile)){
+    load(file = QCfile)
+  } else {
+    stop(paste0(i, " rdat file does not exist."))
+  }
+}
 ```
 
 # QC report for Illumina Infinium Mouse Methylation Array Data
@@ -57,11 +70,7 @@ An object of class ENmix::rgDataSet was made using the ENmix package and is load
 
 ```{r, load QCmetrics,  warning=FALSE, message=FALSE, echo = FALSE}
 
-load(file = paste0(QCDir, "/rgSet.rdat"))
-load(file = paste0(QCDir, "/QCmetrics.rdat"))
-load(file = paste0(QCDir, "/detP.rdat"))
-load(file = paste0(QCDir, "/bsCon.rdat"))
-load(file = paste0(QCDir, "/mraw.rdat"))
+
 
 betas <- getB(mraw)
 
