@@ -46,8 +46,8 @@ source("config.r")
 load(file = file.path(QCDir, "mraw.rdat"))
 rawbetas <- getB(mraw)
 
-# load detP for removing failed probes
-load(file = file.path(QCDir, "detP.rdat"))
+# load failedPRobes object for removing failed probes
+load(file = file.path(QCDir, "failedProbes.rdat"))
 
 # load manifest for removing sex probes and mfg_flagged probes
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
@@ -55,7 +55,6 @@ man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 # load QCmetrics and QC summary to remove failed samples
 if(ctCheck){
   QCSum <- read.csv(file.path(QCDir, "passQCStatusStage3AllSamples.csv"), stringsAsFactors = F)
-  #QCSum <- na.omit(QCSum)
   passQC <- na.omit(QCSum$Basename[QCSum$passQCS3])
   load(file = file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
 } else {
@@ -73,12 +72,12 @@ QCmetrics <- QCmetrics[QCmetrics$Basename %in% passQC,]
 # REMOVE FAILED PROBES AND SAMPLES
 #----------------------------------------------------------------------#
 
-print("filtering SNPs...")
-betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
+#print("filtering SNPs...")
+#betas<-rawbetas[-grep("rs", rownames(rawbetas)),]
 
 print("filtering flagged probes...")
 flagged.probes<-man$IlmnID[man$MFG_Change_Flagged == TRUE]
-betas <- betas[!row.names(betas) %in% flagged.probes,]
+betas <- rawbetas[!row.names(rawbetas) %in% flagged.probes,]
 
 
 #print("filtering sex and MT probes...")
@@ -86,7 +85,7 @@ betas <- betas[!row.names(betas) %in% flagged.probes,]
 #betas<-betas[row.names(betas) %in% auto.probes,]
 
 print("filtering detP failed probes...")
-failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
+#failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
 betas<-betas[!row.names(betas) %in% failedProbes,]
 
 
@@ -104,9 +103,6 @@ mrawPass <- mraw[row.names(betas), colnames(betas)]
 
 # WITHIN CELL TYPE FOR CELL SORTED DATA
 # WITHIN TISSUE FOR DATA FROM MULTIPLE TISSUES
-
-#### This needs to be checked still!!
-## also make sure that cols/rows are in same order before saving
 
 
 if(ctCheck){
