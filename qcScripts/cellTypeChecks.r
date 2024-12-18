@@ -6,10 +6,10 @@
 ##                    of methods
 ##
 ##                    Note the calMouseMethQCmetrics.r script needs to be 
-##                    have been run prior to this one
+##                    run first
 ##
-##                    The CellTypeQC.rmd script uses these metrics to output
-##                    a html report
+##                    The ctCheck.rmd script uses these metrics to output
+##                    te html report sections
 ##
 ##                    This script is an adaptation of the one from brainFans
 ##
@@ -18,7 +18,6 @@
 #----------------------------------------------------------------------#
 # NOTES
 #----------------------------------------------------------------------#
-
 
 # parameters and relative paths etc are loaded from the config.r 
 # file in the project folder
@@ -75,6 +74,12 @@ load(file = file.path(QCDir, "QCmetrics.rdat"))
 
 # load manifest
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F) # REPLACE WITH FUNCTION
+
+
+
+
+
+
 
 
 # load QCstage1 results
