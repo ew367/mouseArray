@@ -196,12 +196,6 @@ ggplot(QCmetrics, aes(x = BsCon))+
 
 # P filter 
 
-```{r, pfilt, echo=FALSE}
-
-failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
-
-```
-
 `r length(failedProbes)` probes fail at a pvalue threshold of `r pFiltProbeThresh` in more than `r pFiltSampleThresh`% of samples
 
 
