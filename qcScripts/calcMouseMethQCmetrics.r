@@ -44,7 +44,7 @@ pheno <- "0_metadata/sampleSheet.csv"
 idatPath <- "1_raw"
 normDir <- "2_normalised"
 QCDir <- "2_normalised/QC"
-configFile <- paste0(dataDir, "config.r") 
+configFile <- file.path(dataDir, "config.r") 
 
 
 # load config.r
@@ -214,7 +214,7 @@ QCmetrics <- left_join(QCmetrics, pfiltdf, by = "Basename")
 # check if any probes fail in more than pFiltSampleThresh of samples
 # samples with low intensity/bscon values or fail pfilt sample check above are excluded first
 
-goodsamps <- QCmetrics$IntensityPass & QCmetrics$BsConPass > bsConThresh & QCmetrics$PfiltPass
+goodsamps <- QCmetrics$IntensityPass & QCmetrics$BsCon > bsConThresh & QCmetrics$PfiltPass
 detP <- detP[,goodsamps]
 failedProbes <- rownames(detP)[((rowSums(detP > pFiltProbeThresh)/ncol(detP)) * 100) > pFiltSampleThresh]
 save(failedProbes, file = file.path(QCDir, "failedProbes.rdat"))
