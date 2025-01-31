@@ -58,9 +58,9 @@ library(data.table)
 
 refDir <- args[2]
 
-manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
-normDir <- paste0(dataDir, "2_normalised")
-QCDir <- paste0(normDir, "/QC")  
+manifest <- file.path(refDir, "MouseMethylation-12v1-0_A2.csv")
+normDir <- file.path(dataDir, "2_normalised")
+QCDir <- file.path(normDir, "/QC")  
 
 # these files are not currently filtered...
 load(file = file.path(QCDir, "mraw.rdat"))
