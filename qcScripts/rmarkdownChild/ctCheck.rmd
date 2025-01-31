@@ -14,15 +14,15 @@ library(data.table)
 # load manifest
 
 refDir <- args[3]
-manifest <- paste0(refDir, "MouseMethylation-12v1-0_A2.csv")
+manifest <- file.path(refDir, "MouseMethylation-12v1-0_A2.csv")
 
 man <- fread(manifest, skip=7, fill=TRUE, data.table=F)
 
 ## filter samples
-QCSum<-read.csv(paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"), stringsAsFactors = FALSE)
+QCSum<-read.csv(file.path(QCDir,"/QCMetricsPostCellTypeClustering.csv"), stringsAsFactors = FALSE)
 passQC<-QCSum$Basename[QCSum[,"PassQC1"]]
 
-load(paste0(QCDir, "/PCAAcrossAllCellTypes.rdata"))
+load(file.path(QCDir, "/PCAAcrossAllCellTypes.rdata"))
 
 
 nStart<-nrow(QCSum)
@@ -60,7 +60,7 @@ if(length(grep("rs", rownames(rawbetas))) > 0){
   rawbetas<-rawbetas[-grep("rs", rownames(rawbetas)),]
 }
 
-sample_anno<-QCmetrics[,c("Age","Sex", "Cell_Type")[c("Age","Sex", "Cell_Type") %in% colnames(QCmetrics)]]
+sample_anno<-as.data.frame(QCmetrics[,c("Age","Sex", "Cell_Type")[c("Age","Sex", "Cell_Type") %in% colnames(QCmetrics)]])
 if("Age" %in% colnames(sample_anno)){
   sample_anno$Age<-as.numeric(sample_anno$Age)
 }
