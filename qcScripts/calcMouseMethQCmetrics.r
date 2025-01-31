@@ -44,7 +44,7 @@ pheno <- "0_metadata/sampleSheet.csv"
 idatPath <- "1_raw"
 normDir <- "2_normalised"
 QCDir <- "2_normalised/QC"
-configFile <- paste0(dataDir, "config.r") 
+configFile <- file.path(dataDir, "config.r") 
 
 
 # load config.r
@@ -130,7 +130,7 @@ U$Basename <- rownames(U)
 QCmetrics <- left_join(sampleSheet, M, by = "Basename")
 QCmetrics <- left_join(QCmetrics, U, by = "Basename")
 
-QCmetrics$IntensityPass <- ifelse(QCmetrics$M.median > 2000 & QCmetrics$U.median > 2000, TRUE, FALSE)
+QCmetrics$IntensityPass <- ifelse(QCmetrics$M.median > intensThresh & QCmetrics$U.median > intensThresh, TRUE, FALSE)
 
 
 #----------------------------------------------------------------------#
