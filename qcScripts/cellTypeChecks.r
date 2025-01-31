@@ -160,7 +160,7 @@ for(i in 1:nrow(QCmetrics)){
 # CALCULATE INDIVIDUAL FACS SCORE
 #----------------------------------------------------------------------#
 
-keepCols<-c("Individual_ID", "Sex", "Age", "Group", "Batch")
+keepCols<-c("Individual_ID", projVar)
 keepCols<-keepCols[keepCols %in% colnames(QCmetrics)]
 uniqueIDs<-unique(QCmetrics[,keepCols])
 indFACSEff<-indFACSEff<-aggregate(maxSD[which(QCmetrics$Cell_Type != "Total")], by = list(QCmetrics$Individual_ID[which(QCmetrics$Cell_Type != "Total")]), FUN = median, na.rm = TRUE)
@@ -356,3 +356,4 @@ write.csv(QCSum, paste0(QCDir,"/passQCStatusStage3AllSamples.csv"))
 write.csv(QCmetrics, paste0(QCDir,"/QCMetricsPostCellTypeClustering.csv"))
 
 save(QCmetrics, file=file.path(QCDir, "QCmetricsPostCellTypeChecks.rdat"))
+

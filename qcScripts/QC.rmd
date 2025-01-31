@@ -27,10 +27,10 @@ library(gridExtra)
 library(corrplot)
 
 
-pheno <- paste0(dataDir, "0_metadata/sampleSheet.csv")
-normDir <- paste0(dataDir, "2_normalised")
-QCDir <- paste0(normDir, "/QC")  
-configFile <- paste0(dataDir, "config.r") 
+pheno <- file.path(dataDir, "0_metadata/sampleSheet.csv")
+normDir <- file.path(dataDir, "2_normalised")
+QCDir <- file.path(normDir, "/QC")  
+configFile <- file.path(dataDir, "config.r") 
 
 # load config.r
 if (file.exists(configFile)) {
